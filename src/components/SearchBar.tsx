@@ -19,13 +19,13 @@ export default function SearchBar({ onResults, onLoadingChange }: SearchBarProps
 
     async function handleSearch(): Promise<void> {
         if (!query.trim()) return;
-
         updateLoading(true);
         try {
-            const res = await fetch(
-                `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20`
-            );
+            const BOOKS_API_URL = "https://openlibrary.org/search.json";
+
+            const res = await fetch(`${BOOKS_API_URL}?q=${encodeURIComponent(query)}&limit=20`);
             const data = await res.json();
+
             onResults(data.docs ?? []);
         } catch {
             onResults([]);

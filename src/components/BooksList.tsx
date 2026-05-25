@@ -15,6 +15,7 @@ export default function BooksList({ books, loading, header, style }: BooksListPr
     return (
         <FlatList
             style={style}
+            keyboardShouldPersistTaps="handled"
             data={books}
             keyExtractor={(item) => item.key}
             renderItem={({ item }) => <BookItem book={item} />}
