@@ -1,9 +1,13 @@
-import { useColorScheme } from "@/context/theme-context";
-import { BookWord } from "@/models/book-word";
-import { ACCENT, Colors, ERROR } from "@/styles/global";
-import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+
+import { useColorScheme } from "@/context/theme-context";
+import { BookWord } from "@/models/book-word";
+
+import { upsertBook, removeBook } from "@/storage/books-storage";
+import { setWords, WordEntry } from "@/storage/words-storage";
+import { ACCENT, Colors, ERROR } from "@/styles/global";
+import { Stack, useLocalSearchParams } from "expo-router";
 
 export default function BookDetail() {
     const scheme = useColorScheme();
@@ -24,9 +28,13 @@ export default function BookDetail() {
         : null;
 
     const [words, setWordsState] = useState<BookWord[]>([]);
-    const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [input, setInput] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+
+    const [addSentence, setAddSentence] = useState<string>('');
+    const [addNotes, setAddNotes] = useState<string>('');
+
+    const [error, setError] = useState<string>("");
 
     async function handleAddWord() {
         const word = input.trim().toLowerCase();
@@ -48,9 +56,11 @@ export default function BookDetail() {
             const data = await res.json();
             const entry = data[0];
             const meaning = entry.meanings[0];
+
             const newEntry: BookWord = {
-                word: entry.word,
-                definition: meaning.definitions[0].definition,
+                ...fetched,
+                sentence: addSentence.trim() || undefined,
+                notes: addNotes.trim() || undefined,
             };
             await persistWords([newEntry, ...words]);
             setInput("");
@@ -61,8 +71,21 @@ export default function BookDetail() {
         }
     }
 
-    async function persistWords(updated: BookWord[]) {
+    async function persistWords(updated: WordEntry[]) {
         setWordsState(updated);
+        await setWords(key!, updated);
+        if (updated.length > 0) {
+            await upsertBook({
+                key: key!,
+                title: title ?? '',
+                author: author ?? '',
+                year: year ?? '',
+                cover_index: cover_index ?? '',
+                wordCount: updated.length,
+            });
+        } else {
+            await removeBook(key!);
+        }
     }
 
     return (

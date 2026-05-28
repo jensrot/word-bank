@@ -1,15 +1,96 @@
+import { useCallback, useState } from "react";
+
 import { useColorScheme } from "@/context/theme-context";
-import { Colors } from "@/styles/global";
-import { ScrollView, StyleSheet, Text } from "react-native";
+
+import type { SavedBook } from "@/models/saved-book";
+
+import { ACCENT, Colors } from "@/styles/global";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
+
+import { Link, router, useFocusEffect } from 'expo-router';
+
+import SavedBookItem from "@/components/SavedBookItem";
+import { getSavedBooks, removeBook } from "@/storage/books-storage";
+import { removeWords } from '@/storage/words-storage';
 
 export default function SavedBooksScreen() {
     const scheme = useColorScheme();
     const styles = scheme === 'dark' ? darkStyles : lightStyles;
 
+    const [books, setBooks] = useState<SavedBook[]>([]);
+    const [booksLoading, setBooksLoading] = useState<boolean>(true);
+
+    useFocusEffect(
+        useCallback(() => {
+            getSavedBooks().then((books) => {
+                setBooks(books);
+                setBooksLoading(false);
+            });
+        }, [])
+    );
+
+    function handleRemove(bookKey: string) {
+        const book = books.find(b => b.key === bookKey);
+        Alert.alert(
+            'Remove book',
+            `Remove "${book?.title ?? 'this book'}" and all its words?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const updated = await removeBook(bookKey);
+                        await removeWords(bookKey);
+                        setBooks(updated);
+                    },
+                },
+            ]
+        );
+    }
+
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>Saved books</Text>
-        </ScrollView>
+        <View style={styles.container}>
+
+            {booksLoading ? (
+                <ActivityIndicator style={styles.loader} color={ACCENT} />
+            ) : null}
+
+            <FlatList
+                data={books}
+                keyExtractor={(item) => item.key}
+                contentContainerStyle={styles.list}
+                ListEmptyComponent={
+                    booksLoading ? null : (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyTitle}>No books yet</Text>
+                            <Link href="/" style={styles.emptySubtitle}>
+                                Search for a book on the Home tab, open it, and add words to start building your word bank.
+                            </Link>
+                        </View>
+                    )
+                }
+                renderItem={({ item }) => (
+                    <SavedBookItem
+                        item={item}
+                        onPress={() =>
+                            router.push({
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                pathname: '/book' as any,
+                                params: {
+                                    key: item.key,
+                                    title: item.title,
+                                    author: item.author,
+                                    year: item.year,
+                                    cover_index: item.cover_index,
+                                },
+                            })
+                        }
+                        onRemove={() => handleRemove(item.key)}
+                    />
+                )}
+            />
+        </View>
     );
 }
 
@@ -18,13 +99,30 @@ function buildStyles(C: typeof Colors.light) {
         container: {
             flex: 1,
             backgroundColor: C.background,
-            padding: 16,
         },
-        title: {
-            fontSize: 22,
-            fontWeight: '700',
+        list: {
+            paddingHorizontal: 16,
+            paddingBottom: 32,
+        },
+        loader: {
+            marginTop: 48,
+        },
+        emptyContainer: {
+            marginTop: 64,
+            alignItems: 'center',
+            paddingHorizontal: 32,
+            gap: 10,
+        },
+        emptyTitle: {
+            fontSize: 18,
+            fontWeight: '600',
             color: C.text,
-            marginBottom: 12,
+        },
+        emptySubtitle: {
+            fontSize: 14,
+            color: ACCENT,
+            textAlign: 'center',
+            lineHeight: 21,
         },
     });
 }
