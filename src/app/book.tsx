@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Stack, useLocalSearchParams } from "expo-router";
 
 import { useColorScheme } from "@/context/theme-context";
 
-import type { WordEntry } from "@/models/word-entry";
+import type { EditDraft, WordEntry } from "@/models/word-entry";
 
 import { removeBook, upsertBook } from "@/storage/books-storage";
 import { getWords, setWords } from "@/storage/words-storage";
 
 import { ACCENT, Colors, ERROR } from "@/styles/global";
+
+const SENTENCE_MAX = 300;
 
 export default function BookDetail() {
     const scheme = useColorScheme();
@@ -35,6 +37,10 @@ export default function BookDetail() {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [editingWord, setEditingWord] = useState<string | null>(null);
+    const [draft, setDraft] = useState<EditDraft>({ sentence: '', notes: '' });
+
+    const notesRef = useRef<TextInput>(null);
 
     useEffect(() => {
         if (key) getWords(key).then(setWordsState);
@@ -70,6 +76,16 @@ export default function BookDetail() {
         } finally {
             setLoading(false);
         }
+    }
+
+    async function handleSaveEdit(word: string) {
+        const updated = words.map((w) =>
+            w.word === word
+                ? { ...w, sentence: draft.sentence.trim() || undefined, notes: draft.notes.trim() || undefined }
+                : w
+        );
+        await persistWords(updated);
+        setEditingWord(null);
     }
 
     async function persistWords(updated: WordEntry[]) {
@@ -144,18 +160,95 @@ export default function BookDetail() {
                 ListEmptyComponent={
                     <Text style={styles.empty}>No words yet. Add one above.</Text>
                 }
-                renderItem={({ item }) => (
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.word}>{item.word}</Text>
-                            {item.phonetic ? (
-                                <Text style={styles.phonetic}>{item.phonetic}</Text>
+                renderItem={({ item }) => {
+                    const isEditing = editingWord === item.word;
+                    return (
+                        <View style={styles.card}>
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.word}>{item.word}</Text>
+                                {item.phonetic ? (
+                                    <Text style={styles.phonetic}>{item.phonetic}</Text>
+                                ) : null}
+                                <Pressable
+                                    style={styles.editButton}
+                                    hitSlop={8}
+                                    onPress={() => {
+                                        if (isEditing) {
+                                            setEditingWord(null);
+                                        } else {
+                                            setEditingWord(item.word);
+                                            setDraft({ sentence: item.sentence ?? '', notes: item.notes ?? '' });
+                                        }
+                                    }}
+                                >
+                                    <Text style={styles.editText}>{isEditing ? 'Cancel' : 'Edit'}</Text>
+                                </Pressable>
+                            </View>
+
+                            <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
+                            <Text style={styles.definition}>{item.definition}</Text>
+
+                            {!isEditing && item.sentence ? (
+                                <View style={styles.metaBlock}>
+                                    <Text style={styles.metaLabel}>Sentence</Text>
+                                    <Text style={styles.metaValue}>{item.sentence}</Text>
+                                </View>
+                            ) : null}
+
+                            {!isEditing && item.notes ? (
+                                <View style={styles.metaBlock}>
+                                    <Text style={styles.metaLabel}>Notes</Text>
+                                    <Text style={styles.metaValue}>{item.notes}</Text>
+                                </View>
+                            ) : null}
+
+                            {isEditing ? (
+                                <View style={styles.editForm}>
+                                    <View style={styles.labelRow}>
+                                        <Text style={styles.metaLabel}>Sentence</Text>
+                                        <Text style={styles.charCount}>{draft.sentence.length} / {SENTENCE_MAX}</Text>
+                                    </View>
+                                    <TextInput
+                                        style={styles.editInput}
+                                        placeholder={`e.g. 'I encountered "${item.word}" while reading...'`}
+                                        placeholderTextColor={placeholderColor}
+                                        value={draft.sentence}
+                                        onChangeText={(t) => setDraft({ ...draft, sentence: t })}
+                                        multiline
+                                        autoCorrect
+                                        autoFocus
+                                        maxLength={SENTENCE_MAX}
+                                        returnKeyType="next"
+                                        submitBehavior="submit"
+                                        onSubmitEditing={() => {
+                                            Keyboard.dismiss();
+                                            setTimeout(() => notesRef.current?.focus(), 100);
+                                        }}
+                                    />
+                                    <Text style={styles.metaLabel}>Notes</Text>
+                                    <TextInput
+                                        ref={notesRef}
+                                        style={styles.editInput}
+                                        placeholder="e.g. Similar to 'optimistic', used in formal writing"
+                                        placeholderTextColor={placeholderColor}
+                                        value={draft.notes}
+                                        onChangeText={(t) => setDraft({ ...draft, notes: t })}
+                                        multiline
+                                        autoCorrect
+                                        returnKeyType="done"
+                                        onSubmitEditing={Keyboard.dismiss}
+                                    />
+                                    <Pressable
+                                        style={styles.saveButton}
+                                        onPress={() => { Keyboard.dismiss(); handleSaveEdit(item.word); }}
+                                    >
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    </Pressable>
+                                </View>
                             ) : null}
                         </View>
-                        <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
-                        <Text style={styles.definition}>{item.definition}</Text>
-                    </View>
-                )}
+                    );
+                }}
             />
         </KeyboardAvoidingView>
     );
@@ -272,6 +365,15 @@ function buildStyles(C: typeof Colors.light) {
         phonetic: {
             fontSize: 13,
             color: C.textMuted,
+            flex: 1,
+        },
+        editButton: {
+            marginLeft: 'auto',
+        },
+        editText: {
+            fontSize: 13,
+            color: ACCENT,
+            fontWeight: '500',
         },
         partOfSpeech: {
             fontSize: 12,
@@ -283,6 +385,61 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 14,
             color: C.textBody,
             lineHeight: 20,
+        },
+        metaBlock: {
+            marginTop: 6,
+            gap: 2,
+        },
+        metaLabel: {
+            fontSize: 11,
+            fontWeight: '600',
+            color: C.textMuted,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+        },
+        metaValue: {
+            fontSize: 14,
+            color: C.textMeta,
+            lineHeight: 20,
+        },
+        editForm: {
+            marginTop: 10,
+            gap: 6,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: C.borderEdit,
+            paddingTop: 10,
+        },
+        labelRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        charCount: {
+            fontSize: 11,
+            color: C.textFaded,
+        },
+        editInput: {
+            borderWidth: 1,
+            borderColor: C.borderInput,
+            borderRadius: 8,
+            padding: 10,
+            fontSize: 14,
+            color: C.text,
+            backgroundColor: C.backgroundInput,
+            minHeight: 64,
+            textAlignVertical: 'top',
+        },
+        saveButton: {
+            backgroundColor: ACCENT,
+            borderRadius: 8,
+            paddingVertical: 10,
+            alignItems: 'center',
+            marginTop: 4,
+        },
+        saveButtonText: {
+            color: '#fff',
+            fontWeight: '600',
+            fontSize: 15,
         },
     });
 }

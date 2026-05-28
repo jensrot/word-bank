@@ -2,7 +2,7 @@ import { useColorScheme } from "@/context/theme-context";
 import { Book } from "@/models/book";
 import { ACCENT, Colors } from "@/styles/global";
 import React, { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 type SearchBarProps = {
     onResults: (books: Book[]) => void;
@@ -25,6 +25,7 @@ export default function SearchBar({ onResults, onLoadingChange }: SearchBarProps
     }
 
     async function handleSearch(): Promise<void> {
+        Keyboard.dismiss();
         if (!query.trim()) return;
         updateLoading(true);
         try {
