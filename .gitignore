@@ -45,3 +45,4 @@ app-example
 # Personal files
 screenshots/
 TODOS.md
+build.sh
