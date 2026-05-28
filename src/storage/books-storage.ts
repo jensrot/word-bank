@@ -26,7 +26,6 @@ export async function upsertBook(book: SavedBook): Promise<void> {
     // If the book already exists, update it
     if (idx >= 0) {
         books[idx] = book;
-        return;
     }
     // If the book doesn't exist, add it to the beginning of the list
     else {

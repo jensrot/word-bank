@@ -14,8 +14,8 @@ type SavedBookItemProps = {
 export default function SavedBookItem({ item, onPress, onRemove }: SavedBookItemProps) {
     const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
 
-    const coverUri = item.cover_index
-        ? `https://covers.openlibrary.org/b/id/${item.cover_index}-S.jpg`
+    const coverUri = item.cover_i
+        ? `https://covers.openlibrary.org/b/id/${item.cover_i}-S.jpg`
         : null;
 
     return (

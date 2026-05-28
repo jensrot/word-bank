@@ -3,6 +3,6 @@ export type SavedBook = {
     title: string;
     author: string;
     year: string;
-    cover_index: string;
+    cover_i: string;
     wordCount: number;
 };

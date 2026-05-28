@@ -82,7 +82,7 @@ export default function SavedBooksScreen() {
                                     title: item.title,
                                     author: item.author,
                                     year: item.year,
-                                    cover_index: item.cover_index,
+                                    cover_i: item.cover_i,
                                 },
                             })
                         }

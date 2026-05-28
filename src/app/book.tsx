@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+
+import { Stack, useLocalSearchParams } from "expo-router";
 
 import { useColorScheme } from "@/context/theme-context";
-import { BookWord } from "@/models/book-word";
 
-import { upsertBook, removeBook } from "@/storage/books-storage";
-import { setWords, WordEntry } from "@/storage/words-storage";
+import type { WordEntry } from "@/models/word-entry";
+
+import { removeBook, upsertBook } from "@/storage/books-storage";
+import { getWords, setWords } from "@/storage/words-storage";
+
 import { ACCENT, Colors, ERROR } from "@/styles/global";
-import { Stack, useLocalSearchParams } from "expo-router";
 
 export default function BookDetail() {
     const scheme = useColorScheme();
@@ -16,7 +19,8 @@ export default function BookDetail() {
         ? Colors.dark.textPlaceholder
         : Colors.light.textPlaceholder;
 
-    const { title, author, year, cover_i } = useLocalSearchParams<{
+    const { key, title, author, year, cover_i } = useLocalSearchParams<{
+        key: string;
         title: string;
         author: string;
         year: string;
@@ -27,14 +31,14 @@ export default function BookDetail() {
         ? `https://covers.openlibrary.org/b/id/${cover_i}-M.jpg`
         : null;
 
-    const [words, setWordsState] = useState<BookWord[]>([]);
-    const [input, setInput] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
+    const [words, setWordsState] = useState<WordEntry[]>([]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const [addSentence, setAddSentence] = useState<string>('');
-    const [addNotes, setAddNotes] = useState<string>('');
-
-    const [error, setError] = useState<string>("");
+    useEffect(() => {
+        if (key) getWords(key).then(setWordsState);
+    }, [key]);
 
     async function handleAddWord() {
         const word = input.trim().toLowerCase();
@@ -49,23 +53,20 @@ export default function BookDetail() {
             const res = await fetch(
                 `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
             );
-            if (!res.ok) {
-                setError("Word not found in dictionary.");
-                return;
-            }
+            if (!res.ok) throw new Error("Word not found in dictionary.");
             const data = await res.json();
             const entry = data[0];
             const meaning = entry.meanings[0];
-
-            const newEntry: BookWord = {
-                ...fetched,
-                sentence: addSentence.trim() || undefined,
-                notes: addNotes.trim() || undefined,
+            const newEntry: WordEntry = {
+                word: entry.word,
+                phonetic: entry.phonetic,
+                partOfSpeech: meaning.partOfSpeech,
+                definition: meaning.definitions[0].definition,
             };
             await persistWords([newEntry, ...words]);
             setInput("");
-        } catch {
-            setError("Failed to fetch definition.");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to fetch definition.");
         } finally {
             setLoading(false);
         }
@@ -80,7 +81,7 @@ export default function BookDetail() {
                 title: title ?? '',
                 author: author ?? '',
                 year: year ?? '',
-                cover_index: cover_index ?? '',
+                cover_i: cover_i ?? '',
                 wordCount: updated.length,
             });
         } else {
@@ -134,6 +135,28 @@ export default function BookDetail() {
             </View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <FlatList
+                data={words}
+                keyExtractor={(item) => item.word}
+                contentContainerStyle={styles.list}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                    <Text style={styles.empty}>No words yet. Add one above.</Text>
+                }
+                renderItem={({ item }) => (
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.word}>{item.word}</Text>
+                            {item.phonetic ? (
+                                <Text style={styles.phonetic}>{item.phonetic}</Text>
+                            ) : null}
+                        </View>
+                        <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
+                        <Text style={styles.definition}>{item.definition}</Text>
+                    </View>
+                )}
+            />
         </KeyboardAvoidingView>
     );
 }
@@ -219,6 +242,47 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 13,
             paddingHorizontal: 12,
             paddingBottom: 4,
+        },
+        list: {
+            padding: 12,
+            gap: 10,
+        },
+        empty: {
+            marginTop: 32,
+            textAlign: "center",
+            fontSize: 15,
+            color: C.textMuted,
+        },
+        card: {
+            backgroundColor: C.backgroundCard,
+            borderRadius: 10,
+            padding: 14,
+            gap: 4,
+        },
+        cardHeader: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+        },
+        word: {
+            fontSize: 17,
+            fontWeight: "700",
+            color: C.text,
+        },
+        phonetic: {
+            fontSize: 13,
+            color: C.textMuted,
+        },
+        partOfSpeech: {
+            fontSize: 12,
+            fontStyle: "italic",
+            color: ACCENT,
+            textTransform: "capitalize",
+        },
+        definition: {
+            fontSize: 14,
+            color: C.textBody,
+            lineHeight: 20,
         },
     });
 }
