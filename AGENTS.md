@@ -2,6 +2,33 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before writing any code.
 
+# NPM Scripts
+
+## Development
+| Script | Description |
+|---|---|
+| `npm start` | Start Metro bundler (web only, no device) |
+| `npm run android` | Start with Expo Go on Android emulator (SDK 54 only) |
+| `npm run ios` | Start with Expo Go on iOS simulator (SDK 54 only) |
+| `npm run web` | Start in browser |
+| `npm run dev-client` | Start dev server for the installed dev client app |
+| `npm run dev-client:android` | Start dev server and open on Android emulator |
+| `npm run lint` | Run ESLint |
+
+## Builds (EAS — takes 10–20 min)
+| Script | Description |
+|---|---|
+| `npm run build:dev` | Build dev client APK for local development (install once per native change) |
+| `npm run build:apk` | Build preview APK for internal tester distribution |
+| `npm run build:android` | Build Android with default profile |
+| `npm run build:ios` | Build iOS with default profile |
+| `npm run build:all` | Build all platforms |
+
+## OTA Updates
+| Script | Description |
+|---|---|
+| `npm run update:preview` | Push JS/UI changes to preview testers without a full rebuild |
+
 # Development Workflow (without Expo Go)
 
 ## Why not Expo Go?
