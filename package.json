@@ -8,6 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "dev-client": "expo start --dev-client",
+    "dev-client:android": "expo start --dev-client --android",
     "lint": "expo lint",
     "build:all": "npx eas build --platform all",
     "build:android": "npx eas build --platform android",
