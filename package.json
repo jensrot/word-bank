@@ -11,6 +11,7 @@
     "build:all": "npx eas build --platform all",
     "build:android": "npx eas build --platform android",
     "build:apk": "npx eas build --platform android --profile preview",
+    "build:dev": "npx eas build --platform android --profile development",
     "build:ios": "npx eas build --platform ios"
   },
   "dependencies": {
