@@ -3,6 +3,24 @@ import { ACCENT, Colors } from "@/styles/global";
 import { useState } from "react";
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
+const RANDOM_TITLES = [
+    "The Great Gatsby",
+    "To Kill a Mockingbird",
+    "1984",
+    "Pride and Prejudice",
+    "The Catcher in the Rye",
+    "Brave New World",
+    "The Hobbit",
+    "Crime and Punishment",
+    "Jane Eyre",
+    "Don Quixote",
+    "Anna Karenina",
+    "Moby Dick",
+    "War and Peace",
+    "The Odyssey",
+    "Hamlet",
+];
+
 type SearchBarProps = {
     onSearch: (query: string) => void;
     loading: boolean;
@@ -19,7 +37,9 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     function handleSearch(): void {
         Keyboard.dismiss();
-        onSearch(query);
+        const searchQuery = query.trim() || RANDOM_TITLES[Math.floor(Math.random() * RANDOM_TITLES.length)];
+        setQuery(searchQuery);
+        onSearch(searchQuery);
     }
 
     return (
