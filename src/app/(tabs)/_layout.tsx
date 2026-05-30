@@ -25,6 +25,8 @@ export default function TabLayout() {
                 tabBarStyle: {
                     backgroundColor: C.background,
                     borderTopColor: C.border,
+                    paddingBottom: 50,
+                    height: 105,
                 },
                 tabBarActiveTintColor: C.tint,
                 tabBarInactiveTintColor: C.tabIconDefault,
