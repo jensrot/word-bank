@@ -137,7 +137,13 @@ export default function BookDetail() {
             const res = await fetch(
                 `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
             );
-            if (!res.ok) throw new Error("Word not found in dictionary.");
+            if (!res.ok) {
+                throw new Error("Word not found in dictionary.");
+            }
+
+            // Only close keyboard on pressing add button when a word is found
+            Keyboard.dismiss();
+
             const data = await res.json();
             const entry = data[0];
             const meaning = entry.meanings[0];

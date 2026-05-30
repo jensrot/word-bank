@@ -47,3 +47,4 @@ screenshots/
 TODOS.md
 build-dev.sh
 build-testers.sh
+push-git-testers.sh
