@@ -131,8 +131,40 @@ EAS builds typically take **10–20 minutes** for Android. The first build is sl
 |---|---|
 | JS/UI only | `npm run update:preview` (OTA, instant) |
 | Added/removed a native package | Full rebuild required |
-| Changed `app.json` native config | Full rebuild required |
+| Changed `app.config.js` native config | Full rebuild required |
 | Bumped `version` in `package.json` | Full rebuild required |
+
+# Build Variants
+
+The project uses `app.config.js` (not `app.json`) to set a different app name and package ID per build profile. This allows the development and preview builds to coexist on the same device.
+
+| Profile | App name | Android package |
+|---|---|---|
+| `development` | Word Bank (Dev) | `com.jensrot.wordbank.dev` |
+| `preview` | Word Bank (Preview) | `com.jensrot.wordbank.preview` |
+| production (future) | Word Bank | `com.jensrot.wordbank` |
+
+The variant is controlled by the `APP_VARIANT` environment variable, set automatically per profile in `eas.json`.
+
+## Verify the config locally (no build needed)
+
+```bash
+APP_VARIANT=development npx expo config 2>/dev/null | head -5
+APP_VARIANT=preview npx expo config 2>/dev/null | head -5
+```
+
+Check that `name` and `package` match the expected values above.
+
+## After changing variants
+
+Since the package name changed from the original `com.jensrot.wordbank`, **all existing APKs must be rebuilt** before the new names take effect:
+
+```bash
+npm run build:dev   # new dev client: Word Bank (Dev)
+npm run build:apk   # new preview APK: Word Bank (Preview)
+```
+
+Uninstall the old APKs from your device first, then install the new ones.
 
 # Keyboard Handling
 
