@@ -1,8 +1,10 @@
 import { useColorScheme } from "@/context/theme-context";
 import { Book } from "@/models/book";
-import { ACCENT, Colors } from "@/styles/global";
+import { Colors } from "@/styles/global";
 import { router } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import CoverImage from "./CoverImage";
 
 export default function BookItem({ book }: { book: Book }) {
     const scheme = useColorScheme();
@@ -26,14 +28,10 @@ export default function BookItem({ book }: { book: Book }) {
                 })
             }
         >
-            {cover_i ? (
-                <Image
-                    source={{ uri: `https://covers.openlibrary.org/b/id/${cover_i}-S.jpg` }}
-                    style={styles.cover}
-                />
-            ) : (
-                <View style={[styles.cover, styles.coverPlaceholder]} />
-            )}
+            <CoverImage
+                uri={cover_i ? `https://covers.openlibrary.org/b/id/${cover_i}-S.jpg` : null}
+                style={styles.cover}
+            />
             <View style={styles.bookInfo}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
                 {author_name && (

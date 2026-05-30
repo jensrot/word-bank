@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import CoverImage from "@/components/CoverImage";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -142,11 +143,7 @@ export default function BookDetail() {
                 bottomOffset={230}
             >
                 <View style={styles.header}>
-                    {coverUri ? (
-                        <Image source={{ uri: coverUri }} style={styles.cover} />
-                    ) : (
-                        <View style={[styles.cover, styles.coverPlaceholder]} />
-                    )}
+                    <CoverImage uri={coverUri} style={styles.cover} />
                     <View style={styles.headerInfo}>
                         <Text style={styles.bookTitle} numberOfLines={3}>{title}</Text>
                         {author ? <Text style={styles.bookAuthor}>{author}</Text> : null}
