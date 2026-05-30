@@ -8,21 +8,24 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before 
 | Script | Description |
 |---|---|
 | `npm start` | Start Metro bundler (web only, no device) |
-| `npm run android` | Start with Expo Go on Android emulator (SDK 54 only) |
-| `npm run ios` | Start with Expo Go on iOS simulator (SDK 54 only) |
+| `npm run android` | Local build and run on Android emulator (no EAS) |
+| `npm run ios` | Local build and run on iOS simulator via Xcode (no EAS, no Apple account needed) |
 | `npm run web` | Start in browser |
-| `npm run dev-client` | Start dev server for the installed dev client app |
+| `npm run dev` | Start dev server and open on both Android emulator and iOS simulator |
+| `npm run dev-client:physical` | Start dev server for the installed dev client app (Can be tested on physical device, own phone) |
 | `npm run dev-client:android` | Start dev server and open on Android emulator |
+| `npm run dev-client:ios` | Start dev server and open on iOS simulator |
 | `npm run lint` | Run ESLint |
 
 ## Builds (EAS — takes 10–20 min)
 | Script | Description |
 |---|---|
-| `npm run build:dev` | Build dev client APK for local development (install once per native change) |
+| `npm run build:dev` | Build Android dev client (install once per native change) |
+| `npm run build:dev:ios` | Build iOS dev client (install once per native change) |
+| `npm run build:android` | Build Android dev client |
+| `npm run build:ios` | Build iOS dev client |
+| `npm run build:all` | Build dev client for both platforms |
 | `npm run build:apk` | Build preview APK for internal tester distribution |
-| `npm run build:android` | Build Android with default profile |
-| `npm run build:ios` | Build iOS with default profile |
-| `npm run build:all` | Build all platforms |
 
 ## OTA Updates
 | Script | Description |
@@ -47,7 +50,7 @@ When the build finishes, install the APK on your Android device from the EAS bui
 
 **2. Start the dev server:**
 ```bash
-npm run dev-client
+npm run dev-client:physical
 ```
 
 **3. Open the dev client app on your phone** — it looks similar to Expo Go but is your own custom build. On its home screen there is a QR scanner.
@@ -56,7 +59,7 @@ npm run dev-client
 
 ## Daily development
 
-Just run `npm run dev-client`, open the dev client app on your phone and scan the QR code. No rebuild needed unless you add a new native package.
+Run `npm run dev-client:physical` (or `npm run dev` for both platforms at once), open the dev client app and scan the QR code. No rebuild needed unless you add a new native package.
 
 ## Troubleshooting
 
@@ -67,7 +70,7 @@ npx eas build:run --platform android --profile development
 ```
 
 **Changes not appearing on device:**
-Metro is serving a cached bundle. The `--clear` flag is already included in `npm run dev-client` and `npm run dev-client:android` to prevent this.
+Metro is serving a cached bundle. The `--clear` flag is already included in `npm run dev-client:physical` and `npm run dev-client:android` to prevent this.
 
 **"Port 8081 is already in use":**
 A previous Metro server is still running. Kill it:
@@ -84,6 +87,52 @@ adb shell am start -a android.intent.action.VIEW -d "exp+word-bank://expo-develo
 ## Build times
 
 EAS builds typically take **10–20 minutes** for Android. The first build is slower as EAS sets up the environment fresh — subsequent builds are faster due to caching.
+
+# Development & Preview Flow
+
+## Android
+
+### Development
+1. Build the dev client once (or after every native package change):
+   ```bash
+   npm run build:dev
+   ```
+2. Install the APK from expo.dev on your device or emulator.
+3. Daily: `npm run dev-client:android` — no rebuild needed for JS/UI changes.
+
+### Preview (sharing with testers)
+1. Build a preview APK:
+   ```bash
+   npm run build:apk
+   ```
+2. Share the download link from expo.dev — testers install it directly, no Play Store needed.
+3. For JS/UI-only updates push OTA instead of rebuilding:
+   ```bash
+   npm run update:preview
+   ```
+
+## iOS
+
+### Development (no Apple account needed)
+1. Build and run locally on the simulator via Xcode:
+   ```bash
+   npm run ios
+   ```
+   Re-run this after any native package change.
+2. Daily: `npm run dev-client:ios` — no rebuild needed for JS/UI changes.
+
+### Preview (requires paid Apple Developer account — $99/year)
+- TestFlight distribution requires a paid account. Without one, iOS distribution to others is not possible.
+- For your own device: free Apple account allows sideloading via Xcode, but the certificate expires every 7 days.
+
+## Decision: when to rebuild vs. OTA (Over-the-air) update
+
+| Change type | Action |
+|---|---|
+| JS/UI only | `npm run update:preview` (OTA, instant) |
+| Added/removed a native package | Full rebuild required |
+| Changed `app.json` native config | Full rebuild required |
+| Bumped `version` in `package.json` | Full rebuild required |
 
 # Keyboard Handling
 
@@ -156,11 +205,6 @@ JS/UI changes can be pushed over-the-air without a full rebuild using EAS Update
 npm run update:preview
 ```
 
-## Push an update to production
-```bash
-npm run update:production
-```
-
 `--auto` uses the current git commit message as the update description.
 
 ## How testers receive updates
@@ -174,6 +218,34 @@ The app checks for updates on every launch (`checkAutomatically: "ON_LOAD"` in `
 ## Channels
 | Profile | Channel | Use for |
 |---|---|---|
-| `preview` | `preview` | Internal testers |
-| `production` | `production` | Play Store / App Store users |
 | `development` | `development` | Dev client builds |
+| `preview` | `preview` | Internal testers |
+
+# Git Commit Conventions
+
+This project uses **Conventional Commits**. Always prefix commit messages with a type:
+
+| Prefix | Use for |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `chore` | Maintenance, tooling, config (no production code change) |
+| `refactor` | Code restructure without changing behavior |
+| `style` | Formatting, whitespace, no logic change |
+| `docs` | Documentation only |
+| `test` | Adding or updating tests |
+| `perf` | Performance improvement |
+| `revert` | Reverting a previous commit |
+
+**Format:**
+```
+feat: add custom book creation screen
+fix: FAB crash when outside tab navigator
+chore: update AGENTS.md with dev flow
+```
+
+Optionally scope to the affected area:
+```
+feat(book): add edit details button for custom books
+fix(nav): back from book now returns to saved-books
+```
