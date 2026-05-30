@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -84,6 +84,23 @@ export default function BookDetail() {
         } finally {
             setLoading(false);
         }
+    }
+
+    function handleDeleteWord(word: string) {
+        Alert.alert(
+            "Remove word",
+            `Remove "${word}" from this book?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        await persistWords(words.filter((w) => w.word !== word));
+                    },
+                },
+            ]
+        );
     }
 
     async function handleSaveEdit(word: string) {
@@ -193,6 +210,14 @@ export default function BookDetail() {
                                         >
                                             <Text style={styles.editText}>{isEditing ? 'Cancel' : 'Edit'}</Text>
                                         </Pressable>
+                                        {!isEditing && (
+                                            <Pressable
+                                                hitSlop={8}
+                                                onPress={() => handleDeleteWord(item.word)}
+                                            >
+                                                <Text style={styles.deleteText}>Remove</Text>
+                                            </Pressable>
+                                        )}
                                     </View>
 
                                     <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
@@ -390,6 +415,11 @@ function buildStyles(C: typeof Colors.light) {
         editText: {
             fontSize: 13,
             color: ACCENT,
+            fontWeight: '500',
+        },
+        deleteText: {
+            fontSize: 13,
+            color: ERROR,
             fontWeight: '500',
         },
         partOfSpeech: {
