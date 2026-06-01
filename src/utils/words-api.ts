@@ -95,7 +95,7 @@ async function fetchSelfHosted(word: string, language: string): Promise<WordEntr
 
     const res = await timedFetch(url);
     if (!res.ok) {
-        throw new Error(`"${word}" not found in dictionary.`);
+        throw new Error(`"No definition found for: ${word}"`);
     }
 
     const data: DefinitionsResponse = await res.json();
@@ -103,7 +103,7 @@ async function fetchSelfHosted(word: string, language: string): Promise<WordEntr
     // One definition per part of speech / etymology; pick the first with a gloss.
     const definition = (data.definitions ?? []).find((d) => (d.senses ?? []).some(firstGloss));
     if (!definition) {
-        throw new Error(`No definition found for "${word}".`);
+        throw new Error(`No definition found for: ${word}`);
     }
 
     // the sense is where the human-readable gloss lives, so find the first one with a gloss

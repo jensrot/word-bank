@@ -30,7 +30,8 @@ module.exports = {
             bundleIdentifier: packageName,
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
-                NSPhotoLibraryUsageDescription: "Pick a cover image for your custom book."
+                NSPhotoLibraryUsageDescription: "Pick a cover image for your custom book.",
+                NSCameraUsageDescription: "Take a photo to use as your book cover."
             }
         },
         android: {
@@ -49,7 +50,13 @@ module.exports = {
         },
         plugins: [
             "expo-router",
-            "expo-image-picker",
+            [
+                "expo-image-picker",
+                {
+                    photosPermission: "Pick a cover image for your custom book.",
+                    cameraPermission: "Take a photo to use as your book cover."
+                }
+            ],
             [
                 "expo-splash-screen",
                 {

@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { usePreventRemove } from "@react-navigation/native";
-import { ActivityIndicator, Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 
-import * as ImagePicker from 'expo-image-picker';
 import { Stack, router, useLocalSearchParams } from "expo-router";
 
 import { useColorScheme } from "@/context/theme-context";
@@ -17,6 +16,8 @@ import { removeBook, upsertBook } from "@/storage/books-storage";
 import { getLanguageCode, setLanguageCode } from "@/storage/language-storage";
 import { getWords, setWords } from "@/storage/words-storage";
 
+import { pickCoverImage } from "@/utils/pick-cover-image";
+import { showActionSheet } from "@/utils/show-action-sheet";
 import { fetchDefinition } from "@/utils/words-api";
 
 import { useRandomSuggestion } from "@/hooks/use-random-suggestion";
@@ -118,24 +119,17 @@ export default function BookDetail() {
     }, [key]);
 
     async function handlePickCover(): Promise<void> {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [2, 3],
-            quality: 0.8,
+        const uri = await pickCoverImage(coverUri !== null);
+        if (!uri) return;
+        setCoverUri(uri);
+        await upsertBook({
+            key: key!,
+            title: metaTitle || (title ?? ''),
+            author: metaAuthor || (author ?? ''),
+            year: metaYear || (year ?? ''),
+            cover_i: uri,
+            wordCount: words.length,
         });
-        if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            setCoverUri(uri);
-            await upsertBook({
-                key: key!,
-                title: metaTitle || (title ?? ''),
-                author: metaAuthor || (author ?? ''),
-                year: metaYear || (year ?? ''),
-                cover_i: uri,
-                wordCount: words.length,
-            });
-        }
     }
 
     async function handleSaveMeta(): Promise<void> {
@@ -202,7 +196,7 @@ export default function BookDetail() {
     }
 
     function handleDeleteWord(word: string): void {
-        Alert.alert(
+        showActionSheet(
             "Remove word",
             `Remove "${word}" from this book?`,
             [

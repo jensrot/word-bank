@@ -2,7 +2,7 @@ import CoverImage from '@/components/CoverImage';
 import { useColorScheme } from '@/context/theme-context';
 import { upsertBook } from '@/storage/books-storage';
 import { ACCENT, Colors, ERROR } from '@/styles/global';
-import * as ImagePicker from 'expo-image-picker';
+import { pickCoverImage } from '@/utils/pick-cover-image';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -22,14 +22,9 @@ export default function CustomBookScreen() {
     const [titleError, setTitleError] = useState('');
 
     async function handlePickImage(): Promise<void> {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [2, 3],
-            quality: 0.8,
-        });
-        if (!result.canceled) {
-            setCoverUri(result.assets[0].uri);
+        const uri = await pickCoverImage(coverUri !== null);
+        if (uri) {
+            setCoverUri(uri);
         }
     }
 

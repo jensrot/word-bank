@@ -6,13 +6,14 @@ import { useFlatListScroll } from "@/hooks/use-scroll-registration";
 import type { SavedBook } from "@/models/saved-book";
 
 import { ACCENT, Colors } from "@/styles/global";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { Link, router, useFocusEffect } from 'expo-router';
 
 import SavedBookItem from "@/components/SavedBookItem";
 import { getSavedBooks, removeBook } from "@/storage/books-storage";
 import { removeWords } from '@/storage/words-storage';
+import { showActionSheet } from "@/utils/show-action-sheet";
 
 export default function SavedBooksScreen() {
     const scheme = useColorScheme();
@@ -33,7 +34,7 @@ export default function SavedBooksScreen() {
 
     function handleRemove(bookKey: string): void {
         const book = books.find(b => b.key === bookKey);
-        Alert.alert(
+        showActionSheet(
             'Remove book',
             `Remove "${book?.title ?? 'this book'}" and all its words?`,
             [
