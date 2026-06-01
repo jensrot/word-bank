@@ -18,6 +18,8 @@
     "build:apk": "npx eas build --platform android --profile preview",
     "build:dev": "npx eas build --platform android --profile development",
     "build:dev:ios": "npx eas build --platform ios --profile development",
+    "build:apk:local:dev": "APP_VARIANT=development expo run:android --variant debug",
+    "build:apk:local:preview": "APP_VARIANT=preview expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease && echo '\\nAPK: android/app/build/outputs/apk/release/app-release.apk'",
     "update:preview": "eas update --branch preview --auto"
   },
   "dependencies": {
