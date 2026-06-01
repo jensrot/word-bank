@@ -47,6 +47,4 @@ screenshots/
 TODOS.md
 IDEAS.md
 
-build-dev.sh
-build-testers.sh
-push-git-testers.sh
+.scripts/
