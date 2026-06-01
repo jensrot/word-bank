@@ -36,8 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
-
 # generated native folders
 /ios
 /android
@@ -47,4 +45,5 @@ screenshots/
 TODOS.md
 IDEAS.md
 
+# Personal bash scripts
 .scripts/
