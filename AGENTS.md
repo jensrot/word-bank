@@ -2,6 +2,67 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before writing any code.
 
+# Development & Build Flow (start here)
+
+Two tracks: **local** for fast personal iteration, **EAS cloud** for anything you distribute. The short version of the normal loop: `npm run dev` every day → `npm run android`/`ios` only when you touch native → `build:apk:local:preview` to sideload a real build → EAS (`build:apk`) only when handing it to someone else.
+
+## 1. Daily development (99% of the time)
+Dev client + Metro; JS/UI changes hot-reload, no rebuild.
+```bash
+npm run dev                 # both emulator + iOS simulator
+npm run dev-client:android  # Android only
+npm run dev-client:ios      # iOS only
+npm run dev-client:physical # your phone (scan QR)
+```
+All pinned to `APP_VARIANT=development` → the `.dev` client. API comes from `.env.local` (your LAN IP) via Metro — edit it, relaunch (`--clear` is already included).
+
+## 2. After adding/removing a native package or changing `app.config.js`
+Native changes can't hot-reload — rebuild & install the dev client once, then go back to step 1:
+```bash
+npm run android   # builds + installs .dev client on emulator, starts dev server
+npm run ios        # same for iOS simulator
+# EAS equivalents: npm run build:dev / build:dev:ios
+```
+(Example: the camera permission needs this — "Take Photo" won't work until a rebuild.)
+
+## 3. A standalone build to sideload to yourself → local (fast, free, no account)
+```bash
+npm run build:apk:local:preview   # → builds/preview/app-release.apk  (standalone, "just works")
+npm run build:apk:local:dev       # → builds/dev/app-debug.apk         (dev client, needs Metro)
+npm run build:apk:local:all       # both
+```
+Pass an HTTPS API URL: `EXPO_PUBLIC_DICT_API_URL=https://… npm run build:apk:local:preview`. These restore the dev variant when done, so `npm run dev` keeps working after.
+
+## 4. Distribute to testers or the store → EAS cloud
+```bash
+npm run build:apk        # preview APK for internal testers (managed keystore, downloadable)
+npm run build:all        # dev client, both platforms
+eas build --profile production --platform android   # store build
+```
+Cloud builds **ignore `.env.local`** — the URL comes from `eas.json` `env` (replace the `https://your-api.example.com` placeholder). Required for **iOS** distribution (signing/TestFlight) and OTA channels.
+
+## 5. Push a JS-only fix to existing tester builds → OTA
+```bash
+npm run update:preview   # eas update, no rebuild
+```
+Only for JS/UI changes on builds already made for that channel. Native changes (step 2) need a new build.
+
+## Quick decision: local vs cloud
+| Goal | Use |
+|---|---|
+| Daily coding | `npm run dev` (step 1) |
+| After a native/config change | `npm run android` / `ios` (step 2) |
+| Quick APK for *yourself* | **Local** `build:apk:local:preview` |
+| APK for *other people* / Play Store | **EAS** `build:apk` / production |
+| iOS build for a real device | **EAS** (signing) |
+| Patch JS on existing testers | OTA `update:preview` |
+
+## The API URL, per context
+- **Dev** → `.env.local` LAN IP (run the server with `HOST=0.0.0.0`, same Wi-Fi).
+- **Local preview APK** → pass HTTPS inline at build time.
+- **EAS builds** → `eas.json` `env` (deployed HTTPS URL).
+- Release/standalone builds **block cleartext HTTP** — anything non-dev must be HTTPS.
+
 # NPM Scripts
 
 ## Development
@@ -26,6 +87,35 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before 
 | `npm run build:ios` | Build iOS dev client |
 | `npm run build:all` | Build dev client for both platforms |
 | `npm run build:apk` | Build preview APK for internal tester distribution |
+
+## Local APK builds (no EAS, no cloud, no device)
+
+Build an installable Android APK entirely on your Mac via `expo prebuild` + Gradle — no Expo cloud, no EAS account, and **no connected device/emulator required**. Each script regenerates the native `android/` project with its own `APP_VARIANT`, runs Gradle, then copies the APK into a per-script folder under `builds/` (gitignored).
+
+| Script | Output | Notes |
+|---|---|---|
+| `npm run build:apk:local:dev` | `builds/dev/app-debug.apk` | Debug **dev client** — does *not* bundle JS; needs Metro running on the same Wi-Fi to load the app. Package `com.jensrot.wordbank.dev`. |
+| `npm run build:apk:local:preview` | `builds/preview/app-release.apk` | **Standalone** release APK — JS bundled in, runs offline. Copy to a phone and it just works. Package `com.jensrot.wordbank.preview`. |
+| `npm run build:apk:local:all` | both of the above | Runs dev then preview back-to-back. They can't run in parallel — both wipe/regenerate the shared `android/` folder, so they must be sequential. |
+
+> The `preview` script (and therefore `:all`) ends by running `APP_VARIANT=development expo prebuild --platform android --clean --no-install` to **restore the dev variant** of the native folder. Without this, the folder would be left stamped `.preview` and `npm run dev` would fail (see Build Variants → native-folder drift).
+
+**Prerequisites:** JDK 17, Android SDK (`ANDROID_HOME` set), and the NDK the project pins (`27.1.12297006`). If a build fails with `[CXX1101] NDK ... did not have a source.properties file`, an NDK auto-download was still in progress — just re-run once it finishes.
+
+**Install the result:**
+```bash
+adb install -r builds/preview/app-release.apk          # onto a running emulator/device
+```
+Or copy the `.apk` to a phone and tap it (enable "install from unknown sources").
+
+**Signing:** the Expo/RN template signs release with the debug keystore by default, so `app-release.apk` installs on any device for personal/tester use. A real keystore is only needed for the Play Store.
+
+⚠️ **API URL gotcha:** `EXPO_PUBLIC_DICT_API_URL` is inlined into the JS bundle at Gradle build time (read from `.env`/env). A **release** APK blocks cleartext HTTP, so a `localhost`/LAN URL won't work — pass an HTTPS URL for the preview build:
+```bash
+EXPO_PUBLIC_DICT_API_URL=https://your-api npm run build:apk:local:preview
+```
+
+**vs. EAS:** `npm run build:apk` (cloud, 10–20 min, managed keystore, downloadable artifact) is still the path for distributing to testers. The local scripts are for fast, offline, throwaway builds. `eas build --local --platform android --profile preview` is a middle ground — runs on your machine but honours `eas.json` profiles/env.
 
 ## OTA Updates
 | Script | Description |
@@ -57,6 +147,26 @@ npm run dev-client:physical
 
 **4. Scan the QR code** shown in your terminal. Your app loads with full hot reload.
 
+## Dev client: cloud vs local build give the same result
+
+Once installed, scanning the QR behaves **identically no matter how the dev client was built** — the build source doesn't change runtime behavior. All of these produce the same `.dev` dev client that loads JS from Metro at scan time:
+
+| Build method | Notes |
+|---|---|
+| EAS `npm run build:dev` | Cloud, EAS-managed keystore, downloadable artifact (easy to share with someone who can't build it) |
+| `npm run android` / `ios` | Built locally + auto-installed on the connected device/simulator |
+| `npm run build:apk:local:dev` | Local `.dev` APK file — install manually, then scan the QR |
+
+Because a dev client pulls **all JS (and the API URL) from Metro** at runtime, the running app is the same; only the build *environment*, signing keystore, and convenience differ.
+
+**Caveats — "same" only holds when:**
+- **Native parity:** both built from the same Expo SDK, native packages, and `app.config.js`. Add a native package (e.g. the camera permission) and an older dev client is missing that native code → JS crashes when it reaches it. Rebuild after any native change (step 2 of the flow at the top).
+- **Same variant:** the `npm run dev` QR is `.dev`; the installed client must also be `.dev` (all the above are). A `.preview`/production client won't connect.
+- **API URL comes from Metro**, not the APK — read from `.env.local` at bundle time. (Opposite of a standalone/preview APK, where it's baked in.)
+- **Physical-device basics:** phone + Mac on the same Wi-Fi, and the API server on `HOST=0.0.0.0` if you're hitting it.
+
+**Rule of thumb:** for your *own* device, build locally (`npm run android` or `build:apk:local:dev`) — faster and free. Use EAS `build:dev` only to hand the dev client to someone who can't build it themselves.
+
 ## Daily development
 
 Run `npm run dev-client:physical` (or `npm run dev` for both platforms at once), open the dev client app and scan the QR code. No rebuild needed unless you add a new native package.
@@ -79,9 +189,9 @@ kill $(lsof -t -i:8081)
 ```
 
 **App not connecting after opening emulator:**
-Manually open the dev client app on the emulator, then enter the URL shown in the terminal (e.g. `http://192.168.0.177:8081`). Or force open via ADB:
+Manually open the dev client app on the emulator, then enter the URL shown in the terminal (e.g. `http://192.168.0.205:8081`). Or force open via ADB:
 ```bash
-adb shell am start -a android.intent.action.VIEW -d "exp+word-bank://expo-development-client/?url=http%3A%2F%2F192.168.0.177%3A8081"
+adb shell am start -a android.intent.action.VIEW -d "exp+word-bank://expo-development-client/?url=http%3A%2F%2F192.168.0.205%3A8081"
 ```
 
 ## Build times
@@ -142,9 +252,50 @@ The project uses `app.config.js` (not `app.json`) to set a different app name an
 |---|---|---|
 | `development` | Word Bank (Dev) | `com.jensrot.wordbank.dev` |
 | `preview` | Word Bank (Preview) | `com.jensrot.wordbank.preview` |
-| production (future) | Word Bank | `com.jensrot.wordbank` |
+| `production` | Word Bank | `com.jensrot.wordbank` |
 
-The variant is controlled by the `APP_VARIANT` environment variable, set automatically per profile in `eas.json`.
+The variant is controlled by the `APP_VARIANT` environment variable. `app.config.js` only special-cases `development`/`preview`; any other value (including `production`) yields the base name/package.
+
+- **EAS cloud builds** set it per profile via `eas.json` → `env` (`development` / `preview` / `production`).
+- **Local dev scripts** (`dev`, `dev-client:*`, `android`, `ios`) pin `APP_VARIANT=development` inline in `package.json`, so they always target the `.dev` client regardless of your shell.
+- **Local APK scripts** set it inline too (`build:apk:local:dev` → development, `build:apk:local:preview` → preview).
+
+## EAS build profiles (`eas.json`)
+
+[eas.json](eas.json) defines three cloud build profiles. Each sets its own `env` — `APP_VARIANT` (→ the name/package above) and `EXPO_PUBLIC_DICT_API_URL` (→ the dictionary backend, needed because **cloud builds ignore `.env.local`**).
+
+| Profile | `distribution` | Android type | `channel` | Extra |
+|---|---|---|---|---|
+| `development` | internal | (default) | development | `developmentClient: true` — dev client that loads JS from Metro |
+| `preview` | internal | `apk` | preview | Standalone APK for internal testers (`npm run build:apk`) |
+| `production` | store (default) | app bundle (default) | production | `autoIncrement: true` bumps the build number each build |
+
+What the keys do:
+- **`env.APP_VARIANT`** — picks the app name/package (see variant table above).
+- **`env.EXPO_PUBLIC_DICT_API_URL`** — the API URL baked into the JS bundle at build time. `preview`/`production` currently hold a **placeholder** (`https://your-api.example.com`); replace with the deployed HTTPS URL before a cloud build is useful.
+- **`channel`** — ties the build to an EAS Update channel so `eas update` can OTA-patch it later.
+- **`distribution: internal`** — installable via a direct link, no store; `production` omits it to target the store.
+- **`autoIncrement` + `appVersionSource: "remote"`** (top-level `cli`) — EAS tracks and increments the production build number server-side.
+
+> The `production` profile was added this round — your earlier Play Store builds used a "production" profile that wasn't in this file, so they relied on defaults. It's now explicit.
+
+⚠️ Cloud builds read these from `eas.json` (or EAS dashboard env vars), **never `.env.local`** — that file applies only to `npm run dev` and the local `build:apk:local:*` scripts.
+
+⚠️ **Shell-leak gotcha:** a leftover `export APP_VARIANT=preview` (e.g. from a manual build) hijacks any command that doesn't pin its own variant. Symptom: `npm run dev` fails with `No development build (com.jensrot.wordbank.preview) installed`. Fix: `unset APP_VARIANT` or open a new terminal. The pinned scripts above are immune — an inline value overrides the inherited one.
+
+⚠️ **Native-folder drift gotcha:** the generated `ios/`/`android/` folders carry a *baked-in* package ID, and `expo start --dev-client` reads **that**, not the freshly-resolved `app.config.js`. The local APK scripts run `prebuild --clean`, so a `build:apk:local:preview`/`:all` would otherwise leave the native folder stamped `.preview` — after which `npm run dev`/`dev-client:android`/`dev-client:ios` would look for the `.preview` dev client and fail. **Fix at the source:** `build:apk:local:preview` (and thus `:all`) ends by restoring the dev variant (`APP_VARIANT=development expo prebuild --platform android --clean --no-install`), so the dev scripts stay fast and never see drift. Note incremental prebuild (`npm run android`/`ios`) does **not** restamp an existing folder — only `--clean` does, which is why the restore uses `--clean`.
+
+## One-time: install the dev client after native drift
+
+If the dev client isn't installed for the current variant (or the folders drifted to `.preview`), regenerate as `.dev` and install once. Do the clean prebuild **first** — `run:android`/`run:ios` use incremental prebuild and won't restamp a `.preview` folder on their own:
+
+```bash
+APP_VARIANT=development npx expo prebuild --clean   # regen native as .dev (full, with pods)
+npm run android     # builds + installs .dev on the Android emulator
+npm run ios         # builds + installs .dev on the iOS simulator
+```
+
+After the dev client is installed, daily `npm run dev` resets the variant and connects — no rebuild.
 
 ## Verify the config locally (no build needed)
 
@@ -226,6 +377,29 @@ useEffect(() => {
 }, [editingWord]);
 
 <TextInput ref={sentenceRef} ... />
+```
+
+# Cover Images (camera + photo library)
+
+Custom books can **take a photo** or **pick from the library** for their cover. Both screens route through one helper so behaviour stays consistent.
+
+## Helpers (reusable)
+
+- [src/utils/pick-cover-image.ts](src/utils/pick-cover-image.ts) — `pickCoverImage(hasExisting?) → Promise<string | null>`. Prompts take-photo vs. choose-from-library, requests camera permission, launches the camera or library, and resolves with the image URI (or `null` if cancelled/denied). Used by both [custom-book.tsx](src/app/(tabs)/custom-book.tsx) and [book.tsx](src/app/book.tsx).
+- [src/utils/show-action-sheet.ts](src/utils/show-action-sheet.ts) — `showActionSheet(title, message, buttons)`. Platform-aware prompt: native `ActionSheetIOS` on iOS, `Alert.alert` on Android. Buttons use the same shape as `Alert`'s (`{ text, onPress?, style? }`) — mark dismiss with `style: 'cancel'` and dangerous actions with `style: 'destructive'`, and the helper wires `cancelButtonIndex`/`destructiveButtonIndex` automatically. On Android, tapping outside the dialog maps to the cancel button.
+
+**Convention:** use `showActionSheet` for any new multi-choice or confirm dialog so iOS gets a native sheet (already used for the cover picker and the remove-word / remove-book confirmations). Keep pure single-message notifications (e.g. the camera-permission-denied notice) as `Alert.alert` — an action sheet is the wrong control for a plain message.
+
+## Camera permission requires a rebuild
+
+Camera access is declared in [app.config.js](app.config.js):
+- iOS: `NSCameraUsageDescription` (infoPlist) + the `expo-image-picker` plugin's `cameraPermission`.
+- Android: the `expo-image-picker` plugin adds the `CAMERA` permission.
+
+This is a **native config change**, so it ships only via a new build — **not** OTA. Rebuild before "Take Photo" works:
+```bash
+npm run build:dev    # or build:apk:local:dev
+npm run build:apk    # or build:apk:local:preview
 ```
 
 # OTA Updates (EAS Update)
@@ -336,9 +510,9 @@ The URL the app must hit depends on where it runs (the fallbacks handle simulato
 
 **Physical device:** create `.env.local` (gitignored) in this app's root:
 ```
-EXPO_PUBLIC_DICT_API_URL=http://192.168.0.177:3000
+EXPO_PUBLIC_DICT_API_URL=http://192.168.0.205:3000
 ```
-`EXPO_PUBLIC_*` vars are inlined at bundle time, so **restart Metro with `--clear`** after changing it (`npm run dev-client:physical` already includes `--clear`). Update the IP if your Mac's LAN address changes.
+`EXPO_PUBLIC_*` vars are inlined at bundle time, so **restart Metro with `--clear`** after changing it (`npm run dev-client:physical` already includes `--clear`). The IP is DHCP-assigned — update it whenever your Mac's LAN address changes. Note this only affects the **dev client** (JS comes from Metro at runtime); a Metro restart is enough, no APK rebuild needed.
 
 ⚠️ **Gotcha:** the Nitro dev server binds to `localhost` by default, so a physical device can't reach it. Start it bound to all interfaces, and keep both devices on the same Wi-Fi:
 ```bash
@@ -349,6 +523,10 @@ Cleartext HTTP is fine for dev-client (debug) builds; production must use HTTPS 
 ## Production hosting
 
 The published app can't reach a `localhost`/LAN URL, so the API must be deployed to a public **HTTPS** URL and set via `EXPO_PUBLIC_DICT_API_URL` in `eas.json` (`env` per profile). The repo ships a `Dockerfile` + `docker-compose.yml` (`restart: unless-stopped`), and the runtime image expects the DB mounted at `/data/wiktionary.db`. Build the `wiktionary.db` on a fast machine and copy it to the host rather than downloading/importing on constrained hardware (e.g. a Raspberry Pi). For a home host behind NAT, Cloudflare Tunnel gives free HTTPS without port-forwarding.
+
+**eas.json status:** the `preview` and `production` profiles already carry `EXPO_PUBLIC_DICT_API_URL` set to a **placeholder** (`https://your-api.example.com`) — replace it with the real deployed URL before a cloud/preview build is useful. **Cloud (EAS) builds ignore `.env.local`** (it's gitignored and never uploaded); they read the URL only from `eas.json` `env` (or EAS dashboard environment variables). `.env.local` applies only to `npm run dev` and the local `build:apk:local:*` scripts.
+
+**Free hosting option (recommended): Oracle Cloud Always Free.** The Ampere A1 (Arm) Always-Free shape (up to 4 OCPU / 24 GB RAM, 200 GB storage, public IPv4) is arm64 — the same arch the Docker image already targets — so it runs unchanged. Deploy mirrors the Raspberry Pi steps below minus the home-network pain; put HTTPS in front with Caddy (auto Let's Encrypt) or a Cloudflare Tunnel. Watch the two gotchas: open the port in **both** the OCI security list **and** the instance's iptables, and A1 capacity can be scarce in popular regions. The same image also drops onto a $4–6/mo VPS with zero code changes.
 
 ## Hosting on a Raspberry Pi (Still TODO)
 
@@ -447,6 +625,7 @@ This project uses **Conventional Commits**. Always prefix commit messages with a
 feat: add custom book creation screen
 fix: FAB crash when outside tab navigator
 chore: update AGENTS.md with dev flow
+feat(searchbar-cross): updated colors
 ```
 
 Optionally scope to the affected area:
