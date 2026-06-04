@@ -1,9 +1,9 @@
 import { useColorScheme } from "@/context/theme-context";
 import { useScrollViewScroll } from "@/hooks/use-scroll-registration";
 import { Colors } from "@/styles/global";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-export default function ExportBooksScreen() {
+export default function MoreScreen() {
     const scheme = useColorScheme();
     const styles = scheme === 'dark' ? darkStyles : lightStyles;
     const { ref: scrollRef, onScroll, scrollEventThrottle } = useScrollViewScroll();
@@ -15,7 +15,27 @@ export default function ExportBooksScreen() {
             scrollEventThrottle={scrollEventThrottle}
             onScroll={onScroll}
         >
-            <Text style={styles.body}>This is where you can export your books.</Text>
+            <Text style={styles.body}>This is where you can find more options.</Text>
+            <View>
+                <Text style={styles.body}>Settings</Text>
+            </View>
+            <View>
+                <Text style={styles.body}>Export Books</Text>
+                <Text style={styles.body}>Import Books</Text>
+            </View>
+            <View>
+                <Text style={styles.body}>About</Text>
+            </View>
+
+            <View>
+                <Text style={styles.body}>Contact</Text>
+            </View>
+
+            <View>
+                <Text style={styles.body}>Translations</Text>
+            </View>
+
+            <Text style={styles.body}>TODO</Text>
         </ScrollView>
     );
 }
