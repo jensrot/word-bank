@@ -34,7 +34,7 @@ export default function FloatingActionButton() {
     }
 
     return (
-        <Animated.View style={[styles.button, { opacity, bottom: TAB_BAR_HEIGHT + 15 }]}>
+        <Animated.View style={[styles.button, { opacity, bottom: TAB_BAR_HEIGHT + 16 }]}>
             <Pressable style={styles.pressable} onPress={handlePress} hitSlop={8}>
                 <Text style={styles.icon}>{showScrollTop ? '↑' : '+'}</Text>
             </Pressable>
@@ -43,29 +43,30 @@ export default function FloatingActionButton() {
 }
 
 const styles = StyleSheet.create({
+    // Material Design: FAB sits 16dp from the screen edges (here, 16dp above the bottom tab bar).
     button: {
         position: 'absolute',
-        bottom: 90,
-        right: 30,
+        right: 16,
         zIndex: 100,
     },
+    // Material Design standard FAB: 56dp diameter, 6dp resting elevation, 24dp icon.
     pressable: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: ACCENT,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 6,
     },
     icon: {
         color: '#fff',
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: '700',
-        lineHeight: 24,
+        lineHeight: 28,
     },
 });
