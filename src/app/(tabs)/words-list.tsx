@@ -1,0 +1,180 @@
+import { useCallback, useMemo, useState } from "react";
+
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+
+import { Link, router, useFocusEffect } from "expo-router";
+
+import { useColorScheme } from "@/context/theme-context";
+import { useFlatListScroll } from "@/hooks/use-scroll-registration";
+
+import { getReadList } from "@/storage/read-list-storage";
+import { getWords } from "@/storage/words-storage";
+
+import { ACCENT, Colors } from "@/styles/global";
+
+import WordListItem, { type WordWithBook } from "@/components/WordListItem";
+
+export default function WordsListScreen() {
+    const scheme = useColorScheme();
+    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const placeholderColor = Colors[scheme].textPlaceholder;
+
+    const [allWords, setAllWords] = useState<WordWithBook[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [search, setSearch] = useState<string>('');
+
+    const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll<WordWithBook>();
+
+    // Load every word from every book into one list. Each word keeps its book's
+    // info so we can show it and open it. Runs each time the tab is opened.
+    useFocusEffect(
+        useCallback(() => {
+            getReadList().then(async (books) => {
+                const perBook = await Promise.all(books.map((book) => getWords(book.key)));
+                const flat = books.flatMap((book, i) =>
+                    perBook[i].map((word) => ({
+                        ...word,
+                        bookKey: book.key,
+                        bookTitle: book.title,
+                        bookAuthor: book.author,
+                        bookYear: book.year,
+                        bookCover: book.cover_i,
+                    }))
+                );
+                flat.sort((a, b) => a.word.localeCompare(b.word)); // A–Z
+                setAllWords(flat);
+                setLoading(false);
+            });
+        }, [])
+    );
+
+    // Keep only the words that match what's typed in the search box.
+    const filtered = useMemo(() => {
+        const query = search.trim().toLowerCase();
+        if (!query) {
+            return allWords;
+        }
+        return allWords.filter((w) => w.word.toLowerCase().includes(query));
+    }, [allWords, search]);
+
+    // Open the book this word belongs to.
+    const openWord = useCallback((item: WordWithBook): void => {
+        router.push({
+            pathname: '/book' as any,
+            params: {
+                key: item.bookKey,
+                title: item.bookTitle,
+                author: item.bookAuthor,
+                year: item.bookYear,
+                cover_i: item.bookCover,
+            },
+        });
+    }, []);
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <ActivityIndicator style={styles.loader} color={ACCENT} />
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.searchRow}>
+                <TextInput
+                    style={styles.search}
+                    placeholder="Search words..."
+                    placeholderTextColor={placeholderColor}
+                    value={search}
+                    onChangeText={setSearch}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                    returnKeyType="search"
+                />
+            </View>
+
+            <FlatList
+                ref={flatListRef}
+                data={filtered}
+                keyExtractor={(item) => `${item.bookKey}_${item.word}`}
+                contentContainerStyle={styles.list}
+                scrollEventThrottle={scrollEventThrottle}
+                onScroll={onScroll}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                    allWords.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyTitle}>No words yet</Text>
+                            <Link href="/" style={styles.emptyLink}>
+                                Open a book and add words to build your word bank.
+                            </Link>
+                        </View>
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyTitle}>No words match &ldquo;{search}&rdquo;</Text>
+                        </View>
+                    )
+                }
+                renderItem={({ item }) => (
+                    <WordListItem item={item} onPress={() => openWord(item)} />
+                )}
+            />
+        </View>
+    );
+}
+
+function buildStyles(C: typeof Colors.light) {
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: C.background,
+        },
+        searchRow: {
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 8,
+        },
+        search: {
+            height: 40,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: C.borderInput,
+            backgroundColor: C.backgroundInput,
+            paddingHorizontal: 12,
+            paddingVertical: 0,
+            fontSize: 15,
+            color: C.text,
+            textAlignVertical: 'center',
+            includeFontPadding: false,
+        },
+        list: {
+            paddingHorizontal: 16,
+            paddingBottom: 32,
+            gap: 10,
+        },
+        loader: {
+            marginTop: 48,
+        },
+        emptyContainer: {
+            marginTop: 64,
+            alignItems: 'center',
+            paddingHorizontal: 32,
+            gap: 10,
+        },
+        emptyTitle: {
+            fontSize: 18,
+            fontWeight: '600',
+            color: C.text,
+        },
+        emptyLink: {
+            fontSize: 14,
+            color: ACCENT,
+            textAlign: 'center',
+            lineHeight: 21,
+        },
+    });
+}
+
+const lightStyles = buildStyles(Colors.light);
+const darkStyles = buildStyles(Colors.dark);
