@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useColorScheme } from "@/context/theme-context";
 import { Colors } from "@/styles/global";
@@ -38,6 +38,14 @@ export default function HomeScreen() {
                 onLoadMore={loadMore}
                 onRetryLoadMore={retryLoadMore}
                 header={header}
+                listEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptySubtitle}>
+                            Search for a book and add a word to your <Text style={styles.wordBankText}>word bank</Text> per book!
+                            Want to add a custom book? Press the + button.
+                        </Text>
+                    </View>
+                }
             />
         </View>
     );
@@ -48,6 +56,22 @@ function buildStyles(C: typeof Colors.light) {
         container: {
             flex: 1,
             backgroundColor: C.background,
+        },
+        emptyContainer: {
+            marginTop: 64,
+            alignItems: 'center',
+            paddingHorizontal: 32,
+            gap: 10,
+        },
+        emptySubtitle: {
+            fontSize: 14,
+            color: C.textMuted,
+            textAlign: 'center',
+            lineHeight: 21,
+        },
+        wordBankText: {
+            fontStyle: "italic",
+            color: C.textMuted,
         },
     });
 }
