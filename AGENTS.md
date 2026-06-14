@@ -44,7 +44,7 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 | Screen | What it does | Key collaborators |
 |---|---|---|
 | `index.tsx` | Search books; renders results with infinite scroll | `useBookSearch`, `SearchBar`, `BooksList` |
-| `book.tsx` | Add words (with dictionary lookup), edit sentence/notes, set reading status, pick cover, edit title/author/year | `WordInput`, `WordCard`, `ReadStatusSelector`, `LanguageModal`, `CoverImage`, `words-storage`, `read-list-storage`, `words-api` |
+| `book.tsx` | Add words (with dictionary lookup), edit sentence/notes, set reading status, pick cover, edit title/author/year | `ReadStatusSelector`, `LanguageModal`, `CoverImage`, `words-storage`, `read-list-storage`, `words-api` |
 | `read-list.tsx` | List saved books, filter by status, change status / remove / open | `ReadListItem`, `read-list-storage`, `getWordCounts` |
 | `words-list.tsx` | Flatten all words across books, live word-text search, tap to open the book | `WordListItem`, `getReadList` + `getWords` |
 | `custom-book.tsx` | Create a manual book (title/author/year/cover/status) then open it | `CoverImage`, `ReadStatusSelector`, `upsertReadListBook` |
@@ -59,8 +59,6 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 | `CoverImage` | Cover with a pulsing skeleton, loading spinner, and graceful fallback on error |
 | `ReadListItem` | `React.memo` card for a saved book: cover, status badge, word count, remove |
 | `ReadStatusSelector` | Three-pill selector for Want / Reading / Have Read |
-| `WordCard` | A saved word: definition + POS + phonetic, with inline edit of sentence/notes |
-| `WordInput` | Add-a-word field (with random-word suggestion) + example-sentence field |
 | `WordListItem` | `React.memo` card on the Words List: word + definition + source-book label |
 | `SearchBar` | Book search field with a random-title suggestion |
 | `LanguageModal` | Bottom-sheet dictionary-language picker with search |
@@ -77,6 +75,7 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 | `useFlatListScroll` / `useScrollViewScroll` | Register a scroll-to-top callback + report scroll position to `ScrollProvider` (drives the FAB). Both share one internal `useScrollRegistration` |
 | `usePulse` | Reanimated opacity-pulse style for loading skeletons |
 | `useThemedStyles(light, dark)` | Picks the light/dark `StyleSheet` for the current theme |
+| `useTypewriterPlaceholder(words, active)` | Animated placeholder that types out example words/titles; pauses when `active` is false (field non-empty or screen blurred) |
 
 ## Context (`src/context/`)
 
