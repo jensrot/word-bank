@@ -13,7 +13,7 @@ export function useFlatListScroll<T = any>() {
             setScrollToTop(null);
             setScrollY(0);
         };
-    }, []));
+    }, [setScrollToTop, setScrollY]));
 
     function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         setScrollY(e.nativeEvent.contentOffset.y);
@@ -32,7 +32,7 @@ export function useScrollViewScroll() {
             setScrollToTop(null);
             setScrollY(0);
         };
-    }, []));
+    }, [setScrollToTop, setScrollY]));
 
     function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         setScrollY(e.nativeEvent.contentOffset.y);

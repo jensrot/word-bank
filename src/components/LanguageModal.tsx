@@ -60,6 +60,7 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
                 listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.4 });
             }, 150);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- run only when the modal opens, not on every keystroke/selection
     }, [visible]);
 
     return (
@@ -104,7 +105,7 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
                                         );
                                     }}
                                     ListEmptyComponent={
-                                        <Text style={styles.langEmpty}>No languages match "{search}"</Text>
+                                        <Text style={styles.langEmpty}>No languages match &quot;{search}&quot;</Text>
                                     }
                                 />
                                 <View style={styles.modalHeader}>

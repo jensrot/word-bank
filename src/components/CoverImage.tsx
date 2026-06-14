@@ -18,7 +18,7 @@ export default function CoverImage({ uri, style }: Props) {
 
     useEffect(() => {
         opacity.value = withRepeat(withTiming(0.35, { duration: 750 }), -1, true);
-    }, []);
+    }, [opacity]);
 
     const skeletonStyle = useAnimatedStyle(() => ({
         opacity: loaded ? 0 : opacity.value,

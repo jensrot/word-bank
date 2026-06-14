@@ -23,7 +23,7 @@ export default function FloatingActionButton() {
             Animated.timing(opacity, { toValue: 0, duration: 100, useNativeDriver: true }),
             Animated.timing(opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
         ]).start();
-    }, [showScrollTop]);
+    }, [showScrollTop, opacity]);
 
     function handlePress(): void {
         if (showScrollTop && scrollToTop) {

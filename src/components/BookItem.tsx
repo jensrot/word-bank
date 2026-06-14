@@ -16,7 +16,6 @@ export default function BookItem({ book }: { book: Book }) {
             style={styles.bookRow}
             onPress={() =>
                 router.push({
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     pathname: "/book" as any,
                     params: {
                         key,
