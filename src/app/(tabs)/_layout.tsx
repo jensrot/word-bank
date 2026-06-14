@@ -26,7 +26,8 @@ export default function TabLayout() {
                         headerTitleStyle: {
                             color: C.text,
                             fontWeight: 'bold',
-                            fontSize: 25,
+                            fontVariant: ['small-caps'],
+                            fontSize: 20,
                         },
                         headerTitleAlign: 'center',
                         headerRight: () => <ThemeToggle />,
@@ -43,18 +44,9 @@ export default function TabLayout() {
                     <Tabs.Screen
                         name="index"
                         options={{
-                            title: "All Books",
+                            title: "Search",
                             tabBarIcon: ({ color, size }) => (
-                                <Ionicons name="home" size={size} color={color} />
-                            ),
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="saved-books"
-                        options={{
-                            title: "Saved Books",
-                            tabBarIcon: ({ color, size }) => (
-                                <Ionicons name="book" size={size} color={color} />
+                                <Ionicons name="search" size={size} color={color} />
                             ),
                         }}
                     />
@@ -62,6 +54,15 @@ export default function TabLayout() {
                         name="read-list"
                         options={{
                             title: "Read List",
+                            tabBarIcon: ({ color, size }) => (
+                                <Ionicons name="list-circle" size={size} color={color} />
+                            ),
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="words-list"
+                        options={{
+                            title: "Words List",
                             tabBarIcon: ({ color, size }) => (
                                 <Ionicons name="list" size={size} color={color} />
                             ),
