@@ -8,6 +8,7 @@ import { ACCENT, Colors } from "@/styles/global";
 
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
+// Extend with AI suggestions later
 const RANDOM_TITLES = [
     "The Great Gatsby",
     "To Kill a Mockingbird",
@@ -61,7 +62,7 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
     return (
         <View style={styles.container}>
             <TextInput
-                placeholder="Search books..."
+                placeholder="Search a book, author..."
                 style={styles.input}
                 placeholderTextColor={placeholderColor}
                 value={query}
