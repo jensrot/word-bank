@@ -19,6 +19,7 @@ import { getLanguageCode, setLanguageCode } from "@/storage/language-storage";
 import { getReadList, setReadBookStatus as persistReadStatus, upsertReadListBook } from "@/storage/read-list-storage";
 import { getWords, setWords } from "@/storage/words-storage";
 
+import { coverUri as coverImageUri } from "@/utils/cover-uri";
 import { pickCoverImage } from "@/utils/pick-cover-image";
 import { showActionSheet } from "@/utils/show-action-sheet";
 import { fetchDefinition } from "@/utils/words-api";
@@ -68,9 +69,7 @@ export default function BookDetail() {
 
     const isCustomBook = key?.startsWith('custom_');
 
-    const [coverUri, setCoverUri] = useState<string | null>(
-        cover_i ? (cover_i.includes('://') ? cover_i : `https://covers.openlibrary.org/b/id/${cover_i}-M.jpg`) : null
-    );
+    const [coverUri, setCoverUri] = useState<string | null>(coverImageUri(cover_i, 'M'));
 
     const [words, setWordsState] = useState<WordEntry[]>([]);
     const [input, setInput] = useState<string>("");

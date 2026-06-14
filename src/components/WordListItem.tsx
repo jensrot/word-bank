@@ -2,7 +2,7 @@ import React from "react";
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 
 import type { WordEntry } from "@/models/word-entry";
 
@@ -24,7 +24,7 @@ type WordListItemProps = {
 
 // Mirrors the word card from book.tsx (dictionary fields only) and adds the source book label.
 function WordListItem({ item, onPress }: WordListItemProps) {
-    const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     return (
         <Pressable style={styles.card} onPress={onPress}>

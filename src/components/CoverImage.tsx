@@ -1,8 +1,9 @@
 import { useColorScheme } from "@/context/theme-context";
+import { usePulse } from "@/hooks/use-pulse";
 import { ACCENT, Colors } from "@/styles/global";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 type Props = {
     uri: string | null | undefined;
@@ -15,15 +16,8 @@ export default function CoverImage({ uri, style }: Props) {
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState(false);
 
-    const opacity = useSharedValue(1);
-
-    useEffect(() => {
-        opacity.value = withRepeat(withTiming(0.35, { duration: 750 }), -1, true);
-    }, [opacity]);
-
-    const skeletonStyle = useAnimatedStyle(() => ({
-        opacity: loaded ? 0 : opacity.value,
-    }));
+    // Pulsing skeleton placeholder; fades out once the image has loaded.
+    const skeletonStyle = usePulse(!loaded);
 
     // Spin only while an actual image is still in flight (not for missing/failed covers).
     const isLoading = !!uri && !loaded && !error;

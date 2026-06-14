@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Link, router, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 
 import { useColorScheme } from "@/context/theme-context";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
@@ -11,6 +11,7 @@ import { getReadList } from "@/storage/read-list-storage";
 import { getWords } from "@/storage/words-storage";
 
 import { ACCENT, Colors } from "@/styles/global";
+import { openBook } from "@/utils/open-book";
 
 import WordListItem, { type WordWithBook } from "@/components/WordListItem";
 
@@ -59,15 +60,12 @@ export default function WordsListScreen() {
 
     // Open the book this word belongs to.
     const openWord = useCallback((item: WordWithBook): void => {
-        router.push({
-            pathname: '/book' as any,
-            params: {
-                key: item.bookKey,
-                title: item.bookTitle,
-                author: item.bookAuthor,
-                year: item.bookYear,
-                cover_i: item.bookCover,
-            },
+        openBook({
+            key: item.bookKey,
+            title: item.bookTitle,
+            author: item.bookAuthor,
+            year: item.bookYear,
+            cover_i: item.bookCover,
         });
     }, []);
 

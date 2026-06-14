@@ -1,22 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import type { ReadListBook, ReadStatus } from "@/models/read-list-book";
+import { getJSON, setJSON } from "@/storage/storage";
 
 export type { ReadListBook, ReadStatus } from "@/models/read-list-book";
 
 const READ_LIST_KEY = "read_list";
 
 export async function getReadList(): Promise<ReadListBook[]> {
-    try {
-        const raw = await AsyncStorage.getItem(READ_LIST_KEY);
-        return raw ? JSON.parse(raw) : [];
-    } catch {
-        return [];
-    }
+    return getJSON<ReadListBook[]>(READ_LIST_KEY, []);
 }
 
 export async function setReadList(books: ReadListBook[]): Promise<void> {
-    await AsyncStorage.setItem(READ_LIST_KEY, JSON.stringify(books));
+    await setJSON(READ_LIST_KEY, books);
 }
 
 // Adds a book, or updates it if it's already saved.

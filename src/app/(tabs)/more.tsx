@@ -1,4 +1,4 @@
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useScrollViewScroll } from "@/hooks/use-scroll-registration";
 import { Colors } from "@/styles/global";
 import { Link, type Href } from "expo-router";
@@ -18,7 +18,7 @@ type RowProps = {
 // A single settings-style row. Renders a chevron when it leads somewhere, or a
 // right-aligned value for read-only info (version, license).
 function Row({ label, value, href, onPress, chevron, first }: RowProps) {
-    const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const inner = (
         <View style={[styles.row, !first && styles.rowBorder]}>
@@ -44,7 +44,7 @@ function Row({ label, value, href, onPress, chevron, first }: RowProps) {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
     return (
         <View style={styles.section}>
             <Text style={styles.sectionLabel}>{title}</Text>
@@ -54,8 +54,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function MoreScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const { ref: scrollRef, onScroll, scrollEventThrottle } = useScrollViewScroll();
 

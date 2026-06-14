@@ -1,12 +1,14 @@
-import React, { useEffect } from "react";
+import React from "react";
 
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
 
 import { ACCENT, Colors } from "@/styles/global";
 
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import Reanimated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Reanimated from "react-native-reanimated";
+
+import { usePulse } from "@/hooks/use-pulse";
 
 import { Link } from "expo-router";
 
@@ -18,11 +20,7 @@ const SKELETON_TITLE_WIDTHS = ['72%', '58%', '80%', '65%', '75%', '50%', '68%', 
 const SKELETON_AUTHOR_WIDTHS = ['45%', '38%', '52%', '42%', '48%', '35%', '44%', '50%'] as const;
 
 function BookSkeletons({ styles }: { styles: ReturnType<typeof buildStyles> }) {
-    const opacity = useSharedValue(1);
-    useEffect(() => {
-        opacity.value = withRepeat(withTiming(0.35, { duration: 750 }), -1, true);
-    }, [opacity]);
-    const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+    const animStyle = usePulse();
 
     return (
         <>
@@ -64,8 +62,7 @@ export default function BooksList({
     header,
     listEmptyComponent,
 }: BooksListProps) {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
     const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll();
 
     return (

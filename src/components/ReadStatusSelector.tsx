@@ -1,4 +1,4 @@
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 
 import type { ReadStatus } from "@/models/read-list-book";
 import { READ_STATUS_LABELS, READ_STATUS_ORDER } from "@/models/read-list-book";
@@ -12,7 +12,7 @@ type ReadStatusSelectorProps = {
 };
 
 export default function ReadStatusSelector({ value, onChange }: ReadStatusSelectorProps) {
-    const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     return (
         <View style={styles.row}>

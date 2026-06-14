@@ -1,4 +1,4 @@
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useScrollViewScroll } from "@/hooks/use-scroll-registration";
 import { Colors } from "@/styles/global";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -6,8 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { version } from "../../../package.json";
 
 export default function AboutScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const { ref: scrollRef, onScroll, scrollEventThrottle } = useScrollViewScroll();
 

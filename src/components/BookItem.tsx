@@ -1,36 +1,30 @@
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { Book } from "@/models/book";
 import { Colors } from "@/styles/global";
-import { router } from "expo-router";
+import { coverUri } from "@/utils/cover-uri";
+import { openBook } from "@/utils/open-book";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import CoverImage from "./CoverImage";
 
 export default function BookItem({ book }: { book: Book }) {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const { key, title, author_name, first_publish_year, cover_i } = book;
     return (
         <Pressable
             style={styles.bookRow}
             onPress={() =>
-                router.push({
-                    pathname: "/book" as any,
-                    params: {
-                        key,
-                        title,
-                        author: author_name?.slice(0, 2).join(", ") ?? "",
-                        year: first_publish_year?.toString() ?? "",
-                        cover_i: cover_i?.toString() ?? "",
-                    },
+                openBook({
+                    key,
+                    title,
+                    author: author_name?.slice(0, 2).join(", ") ?? "",
+                    year: first_publish_year?.toString() ?? "",
+                    cover_i: cover_i?.toString() ?? "",
                 })
             }
         >
-            <CoverImage
-                uri={cover_i ? `https://covers.openlibrary.org/b/id/${cover_i}-S.jpg` : null}
-                style={styles.cover}
-            />
+            <CoverImage uri={coverUri(cover_i, 'S')} style={styles.cover} />
             <View style={styles.bookInfo}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
                 {author_name && (

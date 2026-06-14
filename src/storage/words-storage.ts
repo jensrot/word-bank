@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { WordEntry } from "@/models/word-entry";
+import { getJSON, setJSON } from "@/storage/storage";
 
 export type { WordEntry, EditDraft } from "@/models/word-entry";
 
@@ -8,16 +9,11 @@ function wordKey(bookKey: string): string {
 }
 
 export async function getWords(bookKey: string): Promise<WordEntry[]> {
-    try {
-        const raw = await AsyncStorage.getItem(wordKey(bookKey));
-        return raw ? JSON.parse(raw) : [];
-    } catch {
-        return [];
-    }
+    return getJSON<WordEntry[]>(wordKey(bookKey), []);
 }
 
 export async function setWords(bookKey: string, words: WordEntry[]): Promise<void> {
-    await AsyncStorage.setItem(wordKey(bookKey), JSON.stringify(words));
+    await setJSON(wordKey(bookKey), words);
 }
 
 export async function removeWords(bookKey: string): Promise<void> {

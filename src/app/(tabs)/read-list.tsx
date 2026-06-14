@@ -2,9 +2,9 @@ import { useCallback, useState } from "react";
 
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Link, router, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
 
 import type { ReadListBook, ReadStatus } from "@/models/read-list-book";
@@ -15,6 +15,8 @@ import { getWordCounts } from "@/storage/words-storage";
 import { showActionSheet } from "@/utils/show-action-sheet";
 
 import { ACCENT, Colors } from "@/styles/global";
+
+import { openBook } from "@/utils/open-book";
 
 import ReadListItem from "@/components/ReadListItem";
 
@@ -28,8 +30,7 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function ReadListScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const [readList, setReadList] = useState<ReadListBook[]>([]); // all saved books
     const [readListLoading, setReadListLoading] = useState<boolean>(true); // true until the first load finishes
@@ -94,20 +95,6 @@ export default function ReadListScreen() {
                 },
             ]
         );
-    }
-
-    // Opens the book's detail screen, passing its info along.
-    function openBook(item: ReadListBook): void {
-        router.push({
-            pathname: '/book' as any,
-            params: {
-                key: item.key,
-                title: item.title,
-                author: item.author,
-                year: item.year,
-                cover_i: item.cover_i,
-            },
-        });
     }
 
     // While the first load is happening, show a spinner instead of an empty screen.

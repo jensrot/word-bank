@@ -4,6 +4,7 @@ import { useColorScheme } from '@/context/theme-context';
 import type { ReadStatus } from '@/models/read-list-book';
 import { upsertReadListBook } from '@/storage/read-list-storage';
 import { ACCENT, Colors, ERROR } from '@/styles/global';
+import { openBook } from '@/utils/open-book';
 import { pickCoverImage } from '@/utils/pick-cover-image';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -49,10 +50,7 @@ export default function CustomBookScreen() {
             status: readStatus,
         });
         router.navigate('/(tabs)/read-list');
-        router.push({
-            pathname: '/book' as any,
-            params: { key, title: trimmed, author: trimmedAuthor, year: trimmedYear, cover_i: coverUri ?? '' },
-        });
+        openBook({ key, title: trimmed, author: trimmedAuthor, year: trimmedYear, cover_i: coverUri ?? '' });
         setTitle('');
         setAuthor('');
         setYear('');

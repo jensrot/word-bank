@@ -1,9 +1,10 @@
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 
 import type { ReadListBook } from "@/models/read-list-book";
 import { READ_STATUS_LABELS } from "@/models/read-list-book";
 
 import { ACCENT, Colors } from "@/styles/global";
+import { coverUri } from "@/utils/cover-uri";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 type ReadListItemProps = {
@@ -15,17 +16,15 @@ type ReadListItemProps = {
 };
 
 export default function ReadListItem({ item, wordCount, onPress, onRemove, onChangeStatus }: ReadListItemProps) {
-    const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
-    const coverUri = item.cover_i
-        ? (item.cover_i.includes('://') ? item.cover_i : `https://covers.openlibrary.org/b/id/${item.cover_i}-S.jpg`)
-        : null;
+    const cover = coverUri(item.cover_i, 'S');
 
     return (
         <View style={styles.row}>
             <Pressable style={styles.rowContent} onPress={onPress}>
-                {coverUri ? (
-                    <Image source={{ uri: coverUri }} style={styles.cover} />
+                {cover ? (
+                    <Image source={{ uri: cover }} style={styles.cover} />
                 ) : (
                     <View style={[styles.cover, styles.coverPlaceholder]} />
                 )}

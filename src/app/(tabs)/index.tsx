@@ -1,14 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { useColorScheme } from "@/context/theme-context";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { Colors } from "@/styles/global";
 import { useBookSearch } from "@/hooks/use-book-search";
 import BooksList from "@/components/BooksList";
 import SearchBar from "@/components/SearchBar";
 
 export default function HomeScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const styles = useThemedStyles(lightStyles, darkStyles);
 
     const {
         books,
