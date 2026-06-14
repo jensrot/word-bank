@@ -2,6 +2,119 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before writing any code.
 
+# Codebase Architecture
+
+Word Bank is an Expo (SDK 55) / React Native app using **expo-router** (file-based routing, typed routes), TypeScript, and AsyncStorage for all persistence. There is no backend in this repo — the only network calls are book search (OpenLibrary) and word definitions (the self-hosted [wiktapi.dev](#dictionary-api-wiktapidev) instance + dictionaryapi.dev for English).
+
+## Mental model
+
+A **book** the user is tracking lives on the **read list** (`ReadListBook`, keyed by `key`) and carries a reading status (Want to read / Reading / Have Read). Each book has a separate **word collection** stored under `words_<key>`. The two are linked by the book `key`: adding words to a book automatically ensures the book is on the read list, and the read list shows each book's word count. The **Words List** tab flattens every book's words into one searchable view.
+
+## Source layout (`src/`)
+
+```
+app/                         # expo-router routes (file = route)
+  _layout.tsx                # Root: SafeAreaProvider > AppThemeProvider > KeyboardProvider > Stack
+  book.tsx                   # /book — book detail (add/edit words, status, cover, meta). NOT a tab
+  (tabs)/
+    _layout.tsx              # Tab bar (ScrollProvider + FloatingActionButton); hides custom-book & about
+    index.tsx                # "Search" tab — search OpenLibrary, browse results
+    read-list.tsx            # "Read List" tab — saved books, filter by status
+    words-list.tsx           # "Words List" tab — all words across books, searchable
+    more.tsx                 # "More" tab — settings/about menu (card rows)
+    about.tsx                # /about — reached from More (href: null, not a visible tab)
+    custom-book.tsx          # /custom-book — create a manual book (href: null; opened via the FAB)
+components/                  # presentational + small stateful UI
+hooks/                       # reusable hooks
+context/                     # React context providers
+storage/                    # AsyncStorage wrappers (the data layer)
+models/                     # TypeScript types + constant data
+utils/                       # pure helpers + API clients
+styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
+```
+
+## Routing
+
+- `app/_layout.tsx` wraps everything in theme, keyboard, and safe-area providers; the root Stack hides headers and renders the `(tabs)` group.
+- `app/(tabs)/_layout.tsx` defines the four visible tabs (Search / Read List / Words List / More) plus the per-tab header (with `ThemeToggle`). `custom-book` and `about` are registered with `href: null` so they're routable but not shown as tabs. The whole tab area is wrapped in `ScrollProvider` and overlaid with one shared `FloatingActionButton`.
+- `book.tsx` is a stack route opened via `openBook(...)` ([utils/open-book.ts](src/utils/open-book.ts)), passing `key/title/author/year/cover_i` as params.
+
+## Screens (`app/`)
+
+| Screen | What it does | Key collaborators |
+|---|---|---|
+| `index.tsx` | Search books; renders results with infinite scroll | `useBookSearch`, `SearchBar`, `BooksList` |
+| `book.tsx` | Add words (with dictionary lookup), edit sentence/notes, set reading status, pick cover, edit title/author/year | `WordInput`, `WordCard`, `ReadStatusSelector`, `LanguageModal`, `CoverImage`, `words-storage`, `read-list-storage`, `words-api` |
+| `read-list.tsx` | List saved books, filter by status, change status / remove / open | `ReadListItem`, `read-list-storage`, `getWordCounts` |
+| `words-list.tsx` | Flatten all words across books, live word-text search, tap to open the book | `WordListItem`, `getReadList` + `getWords` |
+| `custom-book.tsx` | Create a manual book (title/author/year/cover/status) then open it | `CoverImage`, `ReadStatusSelector`, `upsertReadListBook` |
+| `more.tsx` / `about.tsx` | Settings-style card menu + app info (version/license from package.json) | `useScrollViewScroll` |
+
+## Components (`src/components/`)
+
+| Component | Purpose |
+|---|---|
+| `BooksList` | `FlatList` of search results: pulsing skeletons while loading, infinite scroll, empty/retry states |
+| `BookItem` | One search-result row (cover + title/author/year); opens the book |
+| `CoverImage` | Cover with a pulsing skeleton, loading spinner, and graceful fallback on error |
+| `ReadListItem` | `React.memo` card for a saved book: cover, status badge, word count, remove |
+| `ReadStatusSelector` | Three-pill selector for Want / Reading / Have Read |
+| `WordCard` | A saved word: definition + POS + phonetic, with inline edit of sentence/notes |
+| `WordInput` | Add-a-word field (with random-word suggestion) + example-sentence field |
+| `WordListItem` | `React.memo` card on the Words List: word + definition + source-book label |
+| `SearchBar` | Book search field with a random-title suggestion |
+| `LanguageModal` | Bottom-sheet dictionary-language picker with search |
+| `FloatingActionButton` | Context-aware: scrolls to top when scrolled, otherwise opens `custom-book` |
+| `ThemeToggle` | Header light/dark switch |
+| `ui/IconSymbol(.ios)` | SF Symbols on iOS, Material-icon fallback elsewhere |
+
+## Hooks (`src/hooks/`)
+
+| Hook | Purpose |
+|---|---|
+| `useBookSearch` | OpenLibrary search: paginated `loadMore`, abortable, `searched`/`loadingMore`/error flags |
+| `useRandomSuggestion` | Picks a random item (titles/words) and tracks whether the current value was auto-filled |
+| `useFlatListScroll` / `useScrollViewScroll` | Register a scroll-to-top callback + report scroll position to `ScrollProvider` (drives the FAB). Both share one internal `useScrollRegistration` |
+| `usePulse` | Reanimated opacity-pulse style for loading skeletons |
+| `useThemedStyles(light, dark)` | Picks the light/dark `StyleSheet` for the current theme |
+
+## Context (`src/context/`)
+
+- `theme-context.tsx` — `AppThemeProvider`, `useTheme()`, `useColorScheme()`. Restores the saved theme via `theme-storage` on launch (defaulting to the system scheme) and persists every toggle.
+- `scroll-context.tsx` — `ScrollProvider`, `useScrollContext()`. Holds `scrollY` + a `scrollToTop` callback that screens register and the FAB consumes.
+
+## Data layer (`src/storage/`, all AsyncStorage)
+
+| Module | Keys | Exports |
+|---|---|---|
+| `storage.ts` | — | `getJSON(key, fallback)` / `setJSON(key, value)` — shared parse/stringify helpers |
+| `read-list-storage.ts` | `read_list` | `getReadList`, `setReadList`, `upsertReadListBook`, `removeReadListBook`, `setReadBookStatus` |
+| `words-storage.ts` | `words_<bookKey>` | `getWords`, `setWords`, `removeWords`, `getWordCounts` (batched `multiGet`) |
+| `language-storage.ts` | `dictionary_language` | `getLanguageCode`, `setLanguageCode` |
+| `theme-storage.ts` | `app_theme` | `getTheme`, `setTheme` (light/dark choice) |
+
+`upsertReadListBook` takes `Omit<ReadListBook, 'addedAt'>` — `addedAt` is owned by storage (stamped on insert, preserved on update).
+
+## Models (`src/models/`)
+
+- `book.ts` — `Book` (OpenLibrary search result shape).
+- `read-list-book.ts` — `ReadListBook`, `ReadStatus` (`'want' | 'reading' | 'read'`), plus `READ_STATUS_LABELS` / `READ_STATUS_ORDER`.
+- `word-entry.ts` — `WordEntry` (word, phonetic, partOfSpeech, definition, sentence, exampleSentence, notes) and `EditDraft`.
+- `language.ts` — `Language` + the full `LANGUAGES` list used by the dictionary picker.
+
+## Utils (`src/utils/`)
+
+- `words-api.ts` — `fetchDefinition(word, lang)`: routes English to dictionaryapi.dev, everything else to the self-hosted wiktapi.dev instance (see [Dictionary API](#dictionary-api-wiktapidev)).
+- `dict-utils.ts` — `timedFetch` (8s timeout with friendly errors).
+- `cover-uri.ts` — `coverUri(coverI, size)`: local image as-is, otherwise an OpenLibrary cover URL.
+- `open-book.ts` — `openBook(params)`: the single place that navigates to `/book`.
+- `pick-cover-image.ts` — `pickCoverImage()`: camera-or-library prompt (uses `expo-image-picker`).
+- `show-action-sheet.ts` — `showActionSheet()`: native sheet on iOS, `Alert` on Android.
+
+## Styling / theming convention
+
+Every component defines `buildStyles(C)` and exports `const lightStyles = buildStyles(Colors.light)` / `darkStyles = buildStyles(Colors.dark)`, then selects with `const styles = useThemedStyles(lightStyles, darkStyles)`. A component that **also** needs a raw color value (e.g. a `placeholderColor` from `Colors[scheme]`) keeps `const scheme = useColorScheme()` and indexes `Colors[scheme]` directly. Colors, `ACCENT`, `ERROR`, and `Fonts` live in [styles/global.ts](src/styles/global.ts).
+
 # Development & Build Flow (start here)
 
 Two tracks: **local** for fast personal iteration, **EAS cloud** for anything you distribute. The short version of the normal loop: `npm run dev` every day → `npm run android`/`ios` only when you touch native → `build:apk:local:preview` to sideload a real build → EAS (`build:apk`) only when handing it to someone else.
@@ -631,5 +744,5 @@ feat(searchbar-cross): updated colors
 Optionally scope to the affected area:
 ```
 feat(book): add edit details button for custom books
-fix(nav): back from book now returns to saved-books
+fix(nav): back from book now returns to read-list
 ```
