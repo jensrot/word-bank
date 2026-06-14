@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 type ScrollContextType = {
     scrollY: number;
@@ -18,9 +18,9 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     const [scrollY, setScrollY] = useState(0);
     const [scrollToTop, setScrollToTopFn] = useState<(() => void) | null>(null);
 
-    function setScrollToTop(fn: (() => void) | null): void {
+    const setScrollToTop = useCallback((fn: (() => void) | null): void => {
         setScrollToTopFn(() => fn);
-    }
+    }, []);
 
     return (
         <ScrollContext.Provider value={{ scrollY, setScrollY, scrollToTop, setScrollToTop }}>

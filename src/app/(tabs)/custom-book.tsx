@@ -1,6 +1,8 @@
 import CoverImage from '@/components/CoverImage';
+import ReadStatusSelector from '@/components/ReadStatusSelector';
 import { useColorScheme } from '@/context/theme-context';
-import { upsertBook } from '@/storage/books-storage';
+import type { ReadStatus } from '@/models/read-list-book';
+import { upsertReadListBook } from '@/storage/read-list-storage';
 import { ACCENT, Colors, ERROR } from '@/styles/global';
 import { pickCoverImage } from '@/utils/pick-cover-image';
 import { router } from 'expo-router';
@@ -15,11 +17,12 @@ export default function CustomBookScreen() {
         ? Colors.dark.textPlaceholder
         : Colors.light.textPlaceholder;
 
-    const [title, setTitle] = useState('');
-    const [author, setAuthor] = useState('');
-    const [year, setYear] = useState('');
+    const [title, setTitle] = useState<string>('');
+    const [author, setAuthor] = useState<string>('');
+    const [year, setYear] = useState<string>('');
     const [coverUri, setCoverUri] = useState<string | null>(null);
-    const [titleError, setTitleError] = useState('');
+    const [titleError, setTitleError] = useState<string>('');
+    const [readStatus, setReadStatus] = useState<ReadStatus>('want');
 
     async function handlePickImage(): Promise<void> {
         const uri = await pickCoverImage(coverUri !== null);
@@ -37,15 +40,15 @@ export default function CustomBookScreen() {
         const key = `custom_${Date.now()}`;
         const trimmedAuthor = author.trim();
         const trimmedYear = year.trim();
-        await upsertBook({
+        await upsertReadListBook({
             key,
             title: trimmed,
             author: trimmedAuthor,
             year: trimmedYear,
             cover_i: coverUri ?? '',
-            wordCount: 0,
+            status: readStatus,
         });
-        router.navigate('/(tabs)/saved-books');
+        router.navigate('/(tabs)/read-list');
         router.push({
             pathname: '/book' as any,
             params: { key, title: trimmed, author: trimmedAuthor, year: trimmedYear, cover_i: coverUri ?? '' },
@@ -55,6 +58,7 @@ export default function CustomBookScreen() {
         setYear('');
         setCoverUri(null);
         setTitleError('');
+        setReadStatus('want');
     }
 
     return (
@@ -112,6 +116,11 @@ export default function CustomBookScreen() {
                         returnKeyType="done"
                         onSubmitEditing={handleCreate}
                     />
+                </View>
+
+                <View style={styles.field}>
+                    <Text style={styles.label}>Reading status</Text>
+                    <ReadStatusSelector value={readStatus} onChange={setReadStatus} />
                 </View>
 
                 <Pressable style={styles.createButton} onPress={handleCreate}>

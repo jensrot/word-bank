@@ -23,3 +23,21 @@ export async function setWords(bookKey: string, words: WordEntry[]): Promise<voi
 export async function removeWords(bookKey: string): Promise<void> {
     await AsyncStorage.removeItem(wordKey(bookKey));
 }
+
+// Counts words for many books at once. Uses multiGet so it's a single storage
+// read instead of one per book — keeps the Read List fast as it grows.
+export async function getWordCounts(bookKeys: string[]): Promise<Record<string, number>> {
+    if (bookKeys.length === 0) {
+        return {};
+    }
+    const pairs = await AsyncStorage.multiGet(bookKeys.map(wordKey));
+    const counts: Record<string, number> = {};
+    pairs.forEach(([, raw], i) => {
+        try {
+            counts[bookKeys[i]] = raw ? (JSON.parse(raw) as unknown[]).length : 0;
+        } catch {
+            counts[bookKeys[i]] = 0;
+        }
+    });
+    return counts;
+}

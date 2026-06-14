@@ -1,17 +1,20 @@
 import { useColorScheme } from "@/context/theme-context";
 
-import type { SavedBook } from '@/models/saved-book';
+import type { ReadListBook } from "@/models/read-list-book";
+import { READ_STATUS_LABELS } from "@/models/read-list-book";
 
-import { ACCENT, Colors } from '@/styles/global';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ACCENT, Colors } from "@/styles/global";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-type SavedBookItemProps = {
-    item: SavedBook;
+type ReadListItemProps = {
+    item: ReadListBook;
+    wordCount: number;
     onPress: () => void;
     onRemove: () => void;
+    onChangeStatus: () => void;
 };
 
-export default function SavedBookItem({ item, onPress, onRemove }: SavedBookItemProps) {
+export default function ReadListItem({ item, wordCount, onPress, onRemove, onChangeStatus }: ReadListItemProps) {
     const styles = useColorScheme() === 'dark' ? darkStyles : lightStyles;
 
     const coverUri = item.cover_i
@@ -34,14 +37,22 @@ export default function SavedBookItem({ item, onPress, onRemove }: SavedBookItem
                     {item.year ? (
                         <Text style={styles.year}>{item.year}</Text>
                     ) : null}
-                    {item.key.startsWith('custom_') ? (
-                        <Text style={styles.personalTag}>Personal</Text>
-                    ) : null}
+                    <Pressable
+                        onPress={onChangeStatus}
+                        hitSlop={6}
+                        style={[styles.statusBadge, styles[`status_${item.status}`]]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Status: ${READ_STATUS_LABELS[item.status]}. Tap to change.`}
+                    >
+                        <Text style={[styles.statusText, styles[`statusText_${item.status}`]]}>
+                            {READ_STATUS_LABELS[item.status]}
+                        </Text>
+                    </Pressable>
                 </View>
                 <View style={styles.badge}>
-                    <Text style={styles.badgeCount}>{item.wordCount}</Text>
+                    <Text style={styles.badgeCount}>{wordCount}</Text>
                     <Text style={styles.badgeLabel}>
-                        {item.wordCount === 1 ? 'word' : 'words'}
+                        {wordCount === 1 ? 'word' : 'words'}
                     </Text>
                 </View>
             </Pressable>
@@ -92,17 +103,39 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 12,
             color: C.textMuted,
         },
-        personalTag: {
+        statusBadge: {
             alignSelf: 'flex-start',
+            borderWidth: 1,
+            borderRadius: 4,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
+            marginTop: 4,
+        },
+        statusText: {
             fontSize: 11,
             fontWeight: '600',
-            color: ACCENT,
-            borderWidth: 1,
+        },
+        // "Want to read" — neutral/muted
+        status_want: {
+            borderColor: C.border,
+        },
+        statusText_want: {
+            color: C.textMuted,
+        },
+        // "Reading" — accent
+        status_reading: {
             borderColor: ACCENT,
-            borderRadius: 4,
-            paddingHorizontal: 5,
-            paddingVertical: 1,
-            marginTop: 2,
+        },
+        statusText_reading: {
+            color: ACCENT,
+        },
+        // "Read" — filled accent
+        status_read: {
+            borderColor: ACCENT,
+            backgroundColor: ACCENT,
+        },
+        statusText_read: {
+            color: '#fff',
         },
         badge: {
             alignItems: 'center',

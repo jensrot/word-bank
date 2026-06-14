@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { usePreventRemove } from "@react-navigation/native";
+
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Stack, router, useLocalSearchParams } from "expo-router";
 
@@ -10,10 +12,11 @@ import { useColorScheme } from "@/context/theme-context";
 
 import type { Language } from "@/models/language";
 import { LANGUAGES } from "@/models/language";
+import type { ReadListBook, ReadStatus } from "@/models/read-list-book";
 import type { EditDraft, WordEntry } from "@/models/word-entry";
 
-import { removeBook, upsertBook } from "@/storage/books-storage";
 import { getLanguageCode, setLanguageCode } from "@/storage/language-storage";
+import { getReadList, setReadBookStatus as persistReadStatus, upsertReadListBook } from "@/storage/read-list-storage";
 import { getWords, setWords } from "@/storage/words-storage";
 
 import { pickCoverImage } from "@/utils/pick-cover-image";
@@ -26,9 +29,9 @@ import { ACCENT, Colors, ERROR } from "@/styles/global";
 
 import CoverImage from "@/components/CoverImage";
 import LanguageModal from "@/components/LanguageModal";
+import ReadStatusSelector from "@/components/ReadStatusSelector";
 
-const SENTENCE_MAX = 300;
-
+// Extend with AI suggestions later
 const RANDOM_WORDS = [
     "serendipity",
     "ephemeral",
@@ -50,6 +53,7 @@ const RANDOM_WORDS = [
 export default function BookDetail() {
     const scheme = useColorScheme();
     const styles = scheme === 'dark' ? darkStyles : lightStyles;
+    const insets = useSafeAreaInsets();
     const placeholderColor = scheme === 'dark'
         ? Colors.dark.textPlaceholder
         : Colors.light.textPlaceholder;
@@ -69,18 +73,22 @@ export default function BookDetail() {
     );
 
     const [words, setWordsState] = useState<WordEntry[]>([]);
-    const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [input, setInput] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
     const [editingWord, setEditingWord] = useState<string | null>(null);
     const [draft, setDraft] = useState<EditDraft>({ sentence: '', notes: '' });
 
-    const [editingMeta, setEditingMeta] = useState(false);
-    const [metaTitle, setMetaTitle] = useState(title ?? '');
-    const [metaAuthor, setMetaAuthor] = useState(author ?? '');
-    const [metaYear, setMetaYear] = useState(year ?? '');
+    const [editingMeta, setEditingMeta] = useState<boolean>(false);
+    const [metaTitle, setMetaTitle] = useState<string>(title ?? '');
+    const [metaAuthor, setMetaAuthor] = useState<string>(author ?? '');
+    const [metaYear, setMetaYear] = useState<string>(year ?? '');
 
-    const [wordAdded, setWordAdded] = useState(false);
+    const [wordAdded, setWordAdded] = useState<boolean>(false);
+
+    const [inReadList, setInReadList] = useState<boolean>(false);
+    const [readStatus, setReadStatus] = useState<ReadStatus>('want'); // Initial value is: "Want to read"
+
     const [language, setLanguage] = useState<Language>(LANGUAGES[0]); // defaults to the first language in array
 
     const { isRandom: isRandomWord, pickNextWord, onManualChange: onManualWordChange } = useRandomSuggestion(RANDOM_WORDS);
@@ -103,9 +111,9 @@ export default function BookDetail() {
     }, []);
 
     // Once a word has been added, intercept "back" (button, swipe, header) and send the
-    // user to the saved-books page instead of back to the search screen. No-op until wordAdded is true.
+    // user to the read list instead of back to the search screen. No-op until wordAdded is true.
     usePreventRemove(wordAdded, () => {
-        router.navigate('/(tabs)/saved-books');
+        router.navigate('/(tabs)/read-list');
     });
 
     useEffect(() => {
@@ -115,21 +123,69 @@ export default function BookDetail() {
     }, [editingWord]);
 
     useEffect(() => {
-        if (key) getWords(key).then(setWordsState);
+        // If words are added to a book, show them
+        if (key) {
+            getWords(key).then(setWordsState);
+        }
     }, [key]);
 
-    async function handlePickCover(): Promise<void> {
-        const uri = await pickCoverImage(coverUri !== null);
-        if (!uri) return;
-        setCoverUri(uri);
-        await upsertBook({
+    // Reflect whether this book is already on the read list (and its status) so the toggle shows current state.
+    useEffect(() => {
+        if (!key) {
+            return;
+        }
+        getReadList().then((list) => {
+            const entry = list.find((b) => b.key === key);
+            setInReadList(!!entry);
+            if (entry) {
+                setReadStatus(entry.status);
+            }
+        });
+    }, [key]);
+
+    // Builds a read-list entry from the current book metadata. `addedAt` is owned by
+    // storage (see upsertReadListBook), so it's intentionally not part of this shape.
+    function buildReadListEntry(overrides?: Partial<Omit<ReadListBook, 'addedAt'>>): Omit<ReadListBook, 'addedAt'> {
+        return {
             key: key!,
             title: metaTitle || (title ?? ''),
             author: metaAuthor || (author ?? ''),
             year: metaYear || (year ?? ''),
-            cover_i: uri,
-            wordCount: words.length,
-        });
+            cover_i: coverUri ?? '',
+            status: readStatus,
+            ...overrides,
+        };
+    }
+
+    // Adds the book to the read list with the given status, or just updates the
+    // status if it's already on the list.
+    async function persistToReadList(status: ReadStatus): Promise<void> {
+        if (inReadList) {
+            await persistReadStatus(key!, status);
+        } else {
+            await upsertReadListBook(buildReadListEntry({ status }));
+            setInReadList(true);
+        }
+    }
+
+    // Selecting a status saves immediately — the footer button is just an optional shortcut that also navigates to the read list.
+    async function handleChangeReadStatus(status: ReadStatus): Promise<void> {
+        setReadStatus(status);
+        await persistToReadList(status);
+    }
+
+    async function saveToReadList(): Promise<void> {
+        await persistToReadList(readStatus);
+        router.navigate('/(tabs)/read-list');
+    }
+
+    async function handlePickCover(): Promise<void> {
+        const uri = await pickCoverImage(coverUri !== null);
+        if (!uri) {
+            return;
+        }
+        setCoverUri(uri);
+        await upsertReadListBook(buildReadListEntry({ cover_i: uri }));
     }
 
     async function handleSaveMeta(): Promise<void> {
@@ -137,14 +193,11 @@ export default function BookDetail() {
         if (!trimmedTitle) {
             return;
         }
-        await upsertBook({
-            key: key!,
+        await upsertReadListBook(buildReadListEntry({
             title: trimmedTitle,
             author: metaAuthor.trim(),
             year: metaYear.trim(),
-            cover_i: cover_i ?? '',
-            wordCount: words.length,
-        });
+        }));
         setEditingMeta(false);
     }
 
@@ -225,17 +278,10 @@ export default function BookDetail() {
     async function persistWords(updated: WordEntry[]): Promise<void> {
         setWordsState(updated);
         await setWords(key!, updated);
-        if (updated.length > 0) {
-            await upsertBook({
-                key: key!,
-                title: title ?? '',
-                author: author ?? '',
-                year: year ?? '',
-                cover_i: cover_i ?? '',
-                wordCount: updated.length,
-            });
-        } else {
-            await removeBook(key!);
+        // Single collection: ensure the book is on the read list so its words aren't orphaned.
+        if (!inReadList) {
+            await upsertReadListBook(buildReadListEntry());
+            setInReadList(true);
         }
     }
 
@@ -349,6 +395,9 @@ export default function BookDetail() {
                                     <Text style={styles.bookTitle} numberOfLines={3}>{metaTitle || title}</Text>
                                     {(metaAuthor || author) ? <Text style={styles.bookAuthor}>{metaAuthor || author}</Text> : null}
                                     {(metaYear || year) ? <Text style={styles.bookYear}>{metaYear || year}</Text> : null}
+                                    <Text style={styles.wordCount}>
+                                        {words.length} {words.length === 1 ? 'word' : 'words'}
+                                    </Text>
                                     {isCustomBook && (
                                         <Pressable onPress={() => setEditingMeta(true)} hitSlop={8} style={styles.editMetaButton}>
                                             <Text style={styles.editMetaText}>Edit details</Text>
@@ -361,7 +410,7 @@ export default function BookDetail() {
 
                     <View style={styles.list}>
                         {words.length === 0 ? (
-                            <Text style={styles.empty}>No words yet. Add one above.</Text>
+                            <Text style={styles.empty}>No words added yet. Add one above. It will be saved to your <Text style={styles.wordBankText}>word bank</Text> per book.</Text>
                         ) : (
                             words.map((item) => {
                                 const isEditing = editingWord === item.word;
@@ -417,7 +466,7 @@ export default function BookDetail() {
                                             <View style={styles.editForm}>
                                                 <View style={styles.labelRow}>
                                                     <Text style={styles.metaLabel}>Sentence</Text>
-                                                    <Text style={styles.charCount}>{draft.sentence.length} / {SENTENCE_MAX}</Text>
+                                                    <Text style={styles.charCount}>{draft.sentence.length}</Text>
                                                 </View>
                                                 <TextInput
                                                     style={styles.editInput}
@@ -428,7 +477,6 @@ export default function BookDetail() {
                                                     multiline
                                                     autoCorrect
                                                     ref={sentenceRef}
-                                                    maxLength={SENTENCE_MAX}
                                                     returnKeyType="next"
                                                     submitBehavior="submit"
                                                     onSubmitEditing={() => {
@@ -463,6 +511,18 @@ export default function BookDetail() {
                         )}
                     </View>
                 </KeyboardAwareScrollView>
+
+                {!editingWord && (
+                    // It always goes above the native keyboard on the devices using insets
+                    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
+                        <ReadStatusSelector value={readStatus} onChange={handleChangeReadStatus} />
+                        <Pressable style={styles.saveButton} onPress={saveToReadList}>
+                            <Text style={styles.saveButtonText}>
+                                {inReadList ? 'Update read list' : 'Save to read list'}
+                            </Text>
+                        </Pressable>
+                    </View>
+                )}
             </View>
 
             {editingWord ? <KeyboardToolbar /> : null}
@@ -486,6 +546,16 @@ function buildStyles(C: typeof Colors.light) {
             alignItems: "center",
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: C.border,
+        },
+        // paddingBottom is set inline from the device's safe-area inset so the footer
+        // clears the iOS home indicator / Android gesture bar.
+        footer: {
+            gap: 12,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: C.border,
+            backgroundColor: C.background,
         },
         cover: {
             width: 120,
@@ -511,6 +581,15 @@ function buildStyles(C: typeof Colors.light) {
         },
         bookYear: {
             fontSize: 14,
+            color: C.textMuted,
+        },
+        wordCount: {
+            fontSize: 13,
+            fontWeight: '600',
+            color: ACCENT,
+        },
+        wordBankText: {
+            fontStyle: "italic",
             color: C.textMuted,
         },
         editMetaButton: {
