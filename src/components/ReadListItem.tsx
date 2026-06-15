@@ -5,7 +5,10 @@ import { READ_STATUS_LABELS } from "@/models/read-list-book";
 
 import { ACCENT, Colors, Fonts } from "@/styles/global";
 import { coverUri } from "@/utils/cover-uri";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import CoverImage from "@/components/CoverImage";
+import CoverPlaceholder from "@/components/CoverPlaceholder";
 
 type ReadListItemProps = {
     item: ReadListBook;
@@ -23,11 +26,7 @@ export default function ReadListItem({ item, wordCount, onPress, onRemove, onCha
     return (
         <View style={styles.row}>
             <Pressable style={styles.rowContent} onPress={onPress}>
-                {cover ? (
-                    <Image source={{ uri: cover }} style={styles.cover} />
-                ) : (
-                    <View style={[styles.cover, styles.coverPlaceholder]} />
-                )}
+                <CoverImage uri={cover} style={styles.cover} placeholder={<CoverPlaceholder size={20} />} />
                 <View style={styles.info}>
                     <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
                     {item.author ? (
@@ -81,9 +80,6 @@ function buildStyles(C: typeof Colors.light) {
             width: 48,
             height: 64,
             borderRadius: 4,
-        },
-        coverPlaceholder: {
-            backgroundColor: C.coverPlaceholder,
         },
         info: {
             flex: 1,

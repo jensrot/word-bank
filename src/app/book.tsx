@@ -30,6 +30,7 @@ import { ACCENT, Colors, ERROR, Fonts } from "@/styles/global";
 
 import ClearableTextInput from "@/components/ClearableTextInput";
 import CoverImage from "@/components/CoverImage";
+import CoverPlaceholder from "@/components/CoverPlaceholder";
 import LanguageModal from "@/components/LanguageModal";
 import ReadStatusSelector from "@/components/ReadStatusSelector";
 
@@ -348,10 +349,10 @@ export default function BookDetail() {
                     <View style={styles.header}>
                         {isCustomBook ? (
                             <Pressable onPress={handlePickCover}>
-                                <CoverImage uri={coverUri} style={styles.cover} />
+                                <CoverImage uri={coverUri} style={styles.cover} placeholder={<CoverPlaceholder size={40} />} />
                             </Pressable>
                         ) : (
-                            <CoverImage uri={coverUri} style={styles.cover} />
+                            <CoverImage uri={coverUri} style={styles.cover} placeholder={<CoverPlaceholder size={40} />} />
                         )}
                         <View style={styles.headerInfo}>
                             {editingMeta ? (
@@ -568,9 +569,6 @@ function buildStyles(C: typeof Colors.light) {
             width: 120,
             height: 160,
             borderRadius: 8,
-        },
-        coverPlaceholder: {
-            backgroundColor: C.coverPlaceholder,
         },
         headerInfo: {
             flex: 1,

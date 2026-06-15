@@ -1,5 +1,6 @@
 import ClearableTextInput from '@/components/ClearableTextInput';
 import CoverImage from '@/components/CoverImage';
+import CoverPlaceholder from '@/components/CoverPlaceholder';
 import ReadStatusSelector from '@/components/ReadStatusSelector';
 import { useColorScheme } from '@/context/theme-context';
 import type { ReadStatus } from '@/models/read-list-book';
@@ -69,7 +70,11 @@ export default function CustomBookScreen() {
                 bottomOffset={80}
             >
                 <View style={styles.coverRow}>
-                    <CoverImage uri={coverUri} style={styles.cover} />
+                    <CoverImage
+                        uri={coverUri}
+                        style={styles.cover}
+                        placeholder={<CoverPlaceholder size={40} />}
+                    />
                     <Pressable style={styles.pickButton} onPress={handlePickImage}>
                         <Text style={styles.pickButtonText}>
                             {coverUri ? 'Change image' : 'Pick cover image'}
