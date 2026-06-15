@@ -3,7 +3,7 @@ import { useThemedStyles } from "@/hooks/use-themed-styles";
 import type { ReadListBook } from "@/models/read-list-book";
 import { READ_STATUS_LABELS } from "@/models/read-list-book";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { ACCENT, Colors, Fonts } from "@/styles/global";
 import { coverUri } from "@/utils/cover-uri";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -93,6 +93,7 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 15,
             fontWeight: '600',
             color: C.text,
+            fontFamily: Fonts.serif,
         },
         author: {
             fontSize: 13,

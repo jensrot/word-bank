@@ -48,6 +48,8 @@ export const Colors = {
     },
 };
 
+// Semantic font roles, resolved to the right platform font family.
+// Use via `fontFamily: Fonts.serif` etc. (serif for book titles, mono for IPA/phonetics).
 export const Fonts = Platform.select({
     ios: {
         sans: 'system-ui',

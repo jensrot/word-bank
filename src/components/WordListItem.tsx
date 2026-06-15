@@ -6,7 +6,7 @@ import { useThemedStyles } from "@/hooks/use-themed-styles";
 
 import type { WordEntry } from "@/models/word-entry";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { ACCENT, Colors, Fonts } from "@/styles/global";
 
 // A word plus the book it was added to, so the list can label and navigate to its source.
 export type WordWithBook = WordEntry & {
@@ -70,6 +70,7 @@ function buildStyles(C: typeof Colors.light) {
         phonetic: {
             fontSize: 13,
             color: C.textMuted,
+            fontFamily: Fonts.mono,
             flex: 1,
         },
         partOfSpeech: {

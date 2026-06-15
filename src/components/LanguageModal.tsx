@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,7 +8,7 @@ import { useColorScheme } from "@/context/theme-context";
 import type { Language } from "@/models/language";
 import { LANGUAGES } from "@/models/language";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { ACCENT, Colors, Fonts } from "@/styles/global";
 
 type LanguageModalProps = {
     selected: Language;
@@ -229,7 +229,7 @@ function buildStyles(C: typeof Colors.light) {
         langOptionCode: {
             fontSize: 12,
             color: C.textMuted,
-            fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+            fontFamily: Fonts.mono,
         },
         langCheck: {
             fontSize: 14,

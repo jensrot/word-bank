@@ -1,6 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useScrollViewScroll } from "@/hooks/use-scroll-registration";
-import { Colors } from "@/styles/global";
+import { Colors, Fonts } from "@/styles/global";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { version } from "../../../package.json";
@@ -58,6 +58,7 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 24,
             fontWeight: '700',
             color: C.text,
+            fontFamily: Fonts.serif,
         },
         version: {
             fontSize: 13,

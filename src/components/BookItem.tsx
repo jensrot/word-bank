@@ -1,6 +1,6 @@
 import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { Book } from "@/models/book";
-import { Colors } from "@/styles/global";
+import { Colors, Fonts } from "@/styles/global";
 import { coverUri } from "@/utils/cover-uri";
 import { openBook } from "@/utils/open-book";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -66,6 +66,7 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 15,
             fontWeight: "600",
             color: C.text,
+            fontFamily: Fonts.serif,
         },
         author: {
             fontSize: 13,
