@@ -8,10 +8,26 @@ import { upsertReadListBook } from '@/storage/read-list-storage';
 import { ACCENT, Colors, ERROR } from '@/styles/global';
 import { openBook } from '@/utils/open-book';
 import { pickCoverImage } from '@/utils/pick-cover-image';
+import { useTypewriterPlaceholder } from '@/hooks/use-typewriter-placeholder';
+import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-controller';
+
+// Extend with AI suggestions later
+const RANDOM_TITLES = [
+    "My Reading Notes",
+    "Reflections on Life",
+    "The Art of Learning",
+    "Journeys and Discoveries",
+    "Thoughts and Musings",
+    "The World Through My Eyes",
+    "Lessons from the Past",
+    "Adventures in Knowledge",
+    "The Mind's Eye",
+    "Exploring the Unknown",
+];
 
 export default function CustomBookScreen() {
     const scheme = useColorScheme();
@@ -27,6 +43,11 @@ export default function CustomBookScreen() {
     const [titleError, setTitleError] = useState<string>('');
     const [readStatus, setReadStatus] = useState<ReadStatus>('want');
 
+    // Types out one example title while the field is empty and the tab is focused.
+    // `word` is the full suggestion, accepted on Enter when the field is empty.
+    const isFocused = useIsFocused();
+    const { text: typedPlaceholder, word } = useTypewriterPlaceholder(RANDOM_TITLES, isFocused && !title);
+
     async function handlePickImage(): Promise<void> {
         const uri = await pickCoverImage(coverUri !== null);
         if (uri) {
@@ -35,24 +56,27 @@ export default function CustomBookScreen() {
     }
 
     async function handleCreate(): Promise<void> {
-        const trimmed = title.trim();
-        if (!trimmed) {
+        // if placeholder is shown use that as the title instead of showing an error for empty title
+        const bookTitle = title.trim() || word;
+        if (!bookTitle) {
             setTitleError('Please enter a book title.');
             return;
         }
         const key = `custom_${Date.now()}`;
-        const trimmedAuthor = author.trim();
-        const trimmedYear = year.trim();
+        const bookAuthor = author.trim();
+        const bookYear = year.trim();
+
         await upsertReadListBook({
             key,
-            title: trimmed,
-            author: trimmedAuthor,
-            year: trimmedYear,
+            title: bookTitle,
+            author: bookAuthor,
+            year: bookYear,
             cover_i: coverUri ?? '',
             status: readStatus,
         });
+
         router.navigate('/(tabs)/read-list');
-        openBook({ key, title: trimmed, author: trimmedAuthor, year: trimmedYear, cover_i: coverUri ?? '' });
+        openBook({ key, title: bookTitle, author: bookAuthor, year: bookYear, cover_i: coverUri ?? '' });
         setTitle('');
         setAuthor('');
         setYear('');
@@ -86,7 +110,7 @@ export default function CustomBookScreen() {
                     <Text style={styles.label}>Title</Text>
                     <ClearableTextInput
                         style={[styles.input, titleError ? styles.inputError : null]}
-                        placeholder="e.g. My reading notes"
+                        placeholder={typedPlaceholder || "Enter book title"}
                         placeholderTextColor={placeholderColor}
                         value={title}
                         onChangeText={(t) => { setTitle(t); setTitleError(''); }}

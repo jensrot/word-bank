@@ -78,6 +78,7 @@ export default function WordsListScreen() {
     // Filter to the typed word, or accept the placeholder suggestion when empty.
     function handleSearch(): void {
         Keyboard.dismiss();
+        // if placeholder is shown use that as the search query instead of showing empty results for empty query
         setSearch(search.trim() || word);
     }
 

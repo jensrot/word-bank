@@ -53,6 +53,7 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     function handleSearch(): void {
         Keyboard.dismiss();
+        // if placeholder is shown use that as the search query instead of showing empty results for empty query
         const searchedWord = query.trim() || word;
         if (!searchedWord) {
             return;
