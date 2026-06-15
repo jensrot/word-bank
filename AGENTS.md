@@ -30,7 +30,7 @@ context/                     # React context providers
 storage/                    # AsyncStorage wrappers (the data layer)
 models/                     # TypeScript types + constant data
 utils/                       # pure helpers + API clients
-styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
+styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts (serif/mono/etc.)
 ```
 
 ## Routing
@@ -60,6 +60,8 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 | `ReadListItem` | `React.memo` card for a saved book: cover, status badge, word count, remove |
 | `ReadStatusSelector` | Three-pill selector for Want / Reading / Have Read |
 | `WordListItem` | `React.memo` card on the Words List: word + definition + source-book label |
+| `ClearableTextInput` | `TextInput` wrapper with a ✕ button that appears while there's text and clears the field; reused by all search/add inputs |
+| `SearchButton` | The accent "Search" button shared by the Search and Words List screens |
 | `SearchBar` | Book search field with a random-title suggestion |
 | `LanguageModal` | Bottom-sheet dictionary-language picker with search |
 | `FloatingActionButton` | Context-aware: scrolls to top when scrolled, otherwise opens `custom-book` |
@@ -71,11 +73,10 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 | Hook | Purpose |
 |---|---|
 | `useBookSearch` | OpenLibrary search: paginated `loadMore`, abortable, `searched`/`loadingMore`/error flags |
-| `useRandomSuggestion` | Picks a random item (titles/words) and tracks whether the current value was auto-filled |
 | `useFlatListScroll` / `useScrollViewScroll` | Register a scroll-to-top callback + report scroll position to `ScrollProvider` (drives the FAB). Both share one internal `useScrollRegistration` |
 | `usePulse` | Reanimated opacity-pulse style for loading skeletons |
 | `useThemedStyles(light, dark)` | Picks the light/dark `StyleSheet` for the current theme |
-| `useTypewriterPlaceholder(words, active)` | Animated placeholder that types out example words/titles; pauses when `active` is false (field non-empty or screen blurred) |
+| `useTypewriterPlaceholder(words, active)` | Types out one example word/title then stops; returns `{ text, word }` so a screen can show `text` as the placeholder and accept `word` on Enter. Pauses when `active` is false (field non-empty or screen blurred) |
 
 ## Context (`src/context/`)
 
@@ -112,7 +113,7 @@ styles/global.ts             # Colors (light/dark), ACCENT, ERROR, Fonts
 
 ## Styling / theming convention
 
-Every component defines `buildStyles(C)` and exports `const lightStyles = buildStyles(Colors.light)` / `darkStyles = buildStyles(Colors.dark)`, then selects with `const styles = useThemedStyles(lightStyles, darkStyles)`. A component that **also** needs a raw color value (e.g. a `placeholderColor` from `Colors[scheme]`) keeps `const scheme = useColorScheme()` and indexes `Colors[scheme]` directly. Colors, `ACCENT`, `ERROR`, and `Fonts` live in [styles/global.ts](src/styles/global.ts).
+Every component defines `buildStyles(C)` and exports `const lightStyles = buildStyles(Colors.light)` / `darkStyles = buildStyles(Colors.dark)`, then selects with `const styles = useThemedStyles(lightStyles, darkStyles)`. A component that **also** needs a raw color value (e.g. a `placeholderColor` from `Colors[scheme]`) keeps `const scheme = useColorScheme()` and indexes `Colors[scheme]` directly. Colors, `ACCENT`, `ERROR`, and `Fonts` live in [styles/global.ts](src/styles/global.ts). `Fonts` maps semantic roles (`serif`, `mono`, `sans`, `rounded`) to platform font families — currently `Fonts.serif` for book titles and `Fonts.mono` for phonetics/IPA and the language code.
 
 # Development & Build Flow (start here)
 
