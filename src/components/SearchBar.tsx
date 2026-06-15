@@ -4,12 +4,14 @@ import { useIsFocused } from "@react-navigation/native";
 
 import { useColorScheme } from "@/context/theme-context";
 
-import { useRandomSuggestion } from "@/hooks/use-random-suggestion";
 import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { Colors } from "@/styles/global";
 
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
+
+import ClearableTextInput from "@/components/ClearableTextInput";
+import SearchButton from "@/components/SearchButton";
 
 // Extend with AI suggestions later
 const RANDOM_TITLES = [
@@ -43,50 +45,37 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
         : Colors.light.textPlaceholder;
 
     const [query, setQuery] = useState<string>("");
-    const { isRandom, pickNextWord, onManualChange } = useRandomSuggestion(RANDOM_TITLES);
 
-    // Animated placeholder that types out example titles while the field is empty
-    // and this tab is focused (pauses when navigated away from).
+    // Types out one example title while the field is empty and the tab is focused.
+    // `word` is the full suggestion, accepted on Enter when the field is empty.
     const isFocused = useIsFocused();
-    const typedPlaceholder = useTypewriterPlaceholder(RANDOM_TITLES, isFocused && !query);
+    const { text: typedPlaceholder, word } = useTypewriterPlaceholder(RANDOM_TITLES, isFocused && !query);
 
     function handleSearch(): void {
         Keyboard.dismiss();
-        if (!query.trim() || isRandom.current) {
-            const nextWord = pickNextWord(query);
-            isRandom.current = true;
-            setQuery(nextWord);
-            onSearch(nextWord);
-        } else {
-            onSearch(query.trim());
+        const searchedWord = query.trim() || word;
+        if (!searchedWord) {
+            return;
         }
-    }
-
-    function handleChangeText(text: string): void {
-        onManualChange();
-        setQuery(text);
+        setQuery(searchedWord);
+        onSearch(searchedWord);
     }
 
     return (
         <View style={styles.container}>
-            <TextInput
+            <ClearableTextInput
                 placeholder={typedPlaceholder || "Search a book, author..."}
+                containerStyle={styles.inputContainer}
                 style={styles.input}
                 placeholderTextColor={placeholderColor}
                 value={query}
-                onChangeText={handleChangeText}
+                onChangeText={setQuery}
                 onSubmitEditing={handleSearch}
                 returnKeyType="search"
                 autoCorrect={false}
                 autoCapitalize="none"
             />
-            <Pressable
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleSearch}
-                disabled={loading}
-            >
-                <Text style={styles.buttonText}>{loading ? "Searching..." : "Search"}</Text>
-            </Pressable>
+            <SearchButton onPress={handleSearch} loading={loading} style={styles.button} />
         </View>
     );
 }
@@ -96,6 +85,9 @@ function buildStyles(C: typeof Colors.light) {
         container: {
             paddingVertical: 12,
         },
+        inputContainer: {
+            marginBottom: 8,
+        },
         input: {
             height: 44,
             borderColor: C.borderInput,
@@ -104,26 +96,13 @@ function buildStyles(C: typeof Colors.light) {
             borderRadius: 8,
             paddingHorizontal: 12,
             paddingVertical: 0,
-            marginBottom: 8,
             fontSize: 16,
             backgroundColor: C.backgroundInput,
             textAlignVertical: 'center',
             includeFontPadding: false,
         },
         button: {
-            backgroundColor: ACCENT,
-            paddingVertical: 10,
-            borderRadius: 8,
-            alignItems: "center",
             marginBottom: 16,
-        },
-        buttonDisabled: {
-            opacity: 0.6,
-        },
-        buttonText: {
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: "600",
         },
     });
 }

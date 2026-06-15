@@ -1,3 +1,4 @@
+import ClearableTextInput from '@/components/ClearableTextInput';
 import CoverImage from '@/components/CoverImage';
 import ReadStatusSelector from '@/components/ReadStatusSelector';
 import { useColorScheme } from '@/context/theme-context';
@@ -8,7 +9,7 @@ import { openBook } from '@/utils/open-book';
 import { pickCoverImage } from '@/utils/pick-cover-image';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-controller';
 
 export default function CustomBookScreen() {
@@ -78,7 +79,7 @@ export default function CustomBookScreen() {
 
                 <View style={styles.field}>
                     <Text style={styles.label}>Title</Text>
-                    <TextInput
+                    <ClearableTextInput
                         style={[styles.input, titleError ? styles.inputError : null]}
                         placeholder="e.g. My reading notes"
                         placeholderTextColor={placeholderColor}
@@ -91,7 +92,7 @@ export default function CustomBookScreen() {
 
                 <View style={styles.field}>
                     <Text style={styles.label}>Author <Text style={styles.optional}>(optional)</Text></Text>
-                    <TextInput
+                    <ClearableTextInput
                         style={styles.input}
                         placeholder="e.g. Jane Austen"
                         placeholderTextColor={placeholderColor}
@@ -103,7 +104,7 @@ export default function CustomBookScreen() {
 
                 <View style={styles.field}>
                     <Text style={styles.label}>Year <Text style={styles.optional}>(optional)</Text></Text>
-                    <TextInput
+                    <ClearableTextInput
                         style={styles.input}
                         placeholder="e.g. 1813"
                         placeholderTextColor={placeholderColor}

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Keyboard, StyleSheet, Text, View } from "react-native";
 
-import { Link, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, useIsFocused } from "expo-router";
 
 import { useColorScheme } from "@/context/theme-context";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
@@ -14,6 +14,10 @@ import { ACCENT, Colors } from "@/styles/global";
 import { openBook } from "@/utils/open-book";
 
 import WordListItem, { type WordWithBook } from "@/components/WordListItem";
+import ClearableTextInput from "@/components/ClearableTextInput";
+import SearchButton from "@/components/SearchButton";
+
+import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 
 export default function WordsListScreen() {
     const scheme = useColorScheme();
@@ -23,6 +27,8 @@ export default function WordsListScreen() {
     const [allWords, setAllWords] = useState<WordWithBook[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [search, setSearch] = useState<string>('');
+
+    const isFocused = useIsFocused();
 
     const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll<WordWithBook>();
 
@@ -49,6 +55,17 @@ export default function WordsListScreen() {
         }, [])
     );
 
+    // Unique saved words; the typewriter picks a random one to show as a hint.
+    // Build the deduped word list, but only rebuild it when allWords changes.
+    // Is why we use useMemo here
+    const wordSuggestions = useMemo(
+        () => Array.from(new Set(allWords.map((w) => w.word))),
+        [allWords],
+    );
+
+    // Types out one of your saved words while the search box is empty; Enter accepts it.
+    const { text: typedPlaceholder, word } = useTypewriterPlaceholder(wordSuggestions, isFocused && !search);
+
     // Keep only the words that match what's typed in the search box.
     const filtered = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -57,6 +74,12 @@ export default function WordsListScreen() {
         }
         return allWords.filter((w) => w.word.toLowerCase().includes(query));
     }, [allWords, search]);
+
+    // Filter to the typed word, or accept the placeholder suggestion when empty.
+    function handleSearch(): void {
+        Keyboard.dismiss();
+        setSearch(search.trim() || word);
+    }
 
     // Open the book this word belongs to.
     const openWord = useCallback((item: WordWithBook): void => {
@@ -80,16 +103,19 @@ export default function WordsListScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.searchRow}>
-                <TextInput
+                <ClearableTextInput
+                    containerStyle={styles.searchInput}
                     style={styles.search}
-                    placeholder="Search words..."
+                    placeholder={typedPlaceholder || "Search your word bank..."}
                     placeholderTextColor={placeholderColor}
                     value={search}
                     onChangeText={setSearch}
+                    onSubmitEditing={handleSearch}
                     autoCorrect={false}
                     autoCapitalize="none"
                     returnKeyType="search"
                 />
+                <SearchButton onPress={handleSearch} />
             </View>
 
             <FlatList
@@ -132,6 +158,9 @@ function buildStyles(C: typeof Colors.light) {
             paddingHorizontal: 16,
             paddingTop: 12,
             paddingBottom: 8,
+        },
+        searchInput: {
+            marginBottom: 8,
         },
         search: {
             height: 40,

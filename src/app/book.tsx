@@ -24,11 +24,11 @@ import { pickCoverImage } from "@/utils/pick-cover-image";
 import { showActionSheet } from "@/utils/show-action-sheet";
 import { fetchDefinition } from "@/utils/words-api";
 
-import { useRandomSuggestion } from "@/hooks/use-random-suggestion";
 import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 
-import { ACCENT, Colors, ERROR } from "@/styles/global";
+import { ACCENT, Colors, ERROR, Fonts } from "@/styles/global";
 
+import ClearableTextInput from "@/components/ClearableTextInput";
 import CoverImage from "@/components/CoverImage";
 import LanguageModal from "@/components/LanguageModal";
 import ReadStatusSelector from "@/components/ReadStatusSelector";
@@ -91,12 +91,13 @@ export default function BookDetail() {
 
     const [language, setLanguage] = useState<Language>(LANGUAGES[0]); // defaults to the first language in array
 
-    const { isRandom: isRandomWord, pickNextWord, onManualChange: onManualWordChange } = useRandomSuggestion(RANDOM_WORDS);
-
-    // Animated placeholder that types out example words while the add-word field is
-    // empty, the screen is focused, and we're not editing an existing word.
+    // Types out one example word while the add-word field is empty, the screen is
+    // focused, and we're not editing. `suggestedWord` is added on Enter when empty.
     const isFocused = useIsFocused();
-    const typedWordPlaceholder = useTypewriterPlaceholder(RANDOM_WORDS, isFocused && !input && !editingWord);
+    const { text: typedWordPlaceholder, word: suggestedWord } = useTypewriterPlaceholder(
+        RANDOM_WORDS,
+        isFocused && !input && !editingWord,
+    );
 
     const notesRef = useRef<TextInput>(null);
     const sentenceRef = useRef<TextInput>(null);
@@ -212,18 +213,18 @@ export default function BookDetail() {
     }
 
     function handleChangeInput(text: string): void {
-        onManualWordChange();
         setInput(text);
     }
 
     async function handleAddWord(): Promise<void> {
-        const wasRandom = isRandomWord.current;
         let word = input.trim().toLowerCase();
-        if (!word || wasRandom) {
-            const nextWord = pickNextWord(input);
-            isRandomWord.current = true;
-            setInput(nextWord);
-            word = nextWord;
+        if (!word) {
+            // If a suggested word is available from the placeholder use that.
+            word = suggestedWord.toLowerCase();
+            if (!word) {
+                return;
+            }
+            setInput(word);
         }
         if (words.some((w) => w.word === word)) {
             setError("Word already added.");
@@ -297,8 +298,8 @@ export default function BookDetail() {
                     title: metaTitle || (title ?? "Book Detail"),
                     headerShown: true,
                     headerBackVisible: true,
-                    // iOS: disable the long-press back menu so it can't bypass the saved-books redirect Is related to the usePreventRemove hook 
-                    // that redirects back to saved-books once a word has been added.
+                    // iOS: disable the long-press back menu so it can't bypass the read-list redirect. Related to the usePreventRemove hook
+                    // that redirects to the read list once a word has been added.
                     // This ensures users don't accidentally lose their changes by navigating back to the search screen.
                     headerBackButtonMenuEnabled: false
                 }}
@@ -307,7 +308,8 @@ export default function BookDetail() {
             <View style={styles.container}>
                 {!editingWord && (
                     <View style={styles.addRow}>
-                        <TextInput
+                        <ClearableTextInput
+                            containerStyle={styles.inputContainer}
                             style={styles.input}
                             placeholder={typedWordPlaceholder || "Add a word..."}
                             placeholderTextColor={placeholderColor}
@@ -644,8 +646,10 @@ function buildStyles(C: typeof Colors.light) {
             padding: 12,
             paddingBottom: 4,
         },
-        input: {
+        inputContainer: {
             flex: 1,
+        },
+        input: {
             height: 44,
             borderRadius: 8,
             borderWidth: 1,
@@ -709,6 +713,7 @@ function buildStyles(C: typeof Colors.light) {
         phonetic: {
             fontSize: 13,
             color: C.textMuted,
+            fontFamily: Fonts.mono,
             flex: 1,
         },
         editButton: {
