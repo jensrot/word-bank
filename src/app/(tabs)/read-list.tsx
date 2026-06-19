@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Link, router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 
 import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
@@ -12,6 +12,7 @@ import { READ_STATUS_LABELS, READ_STATUS_ORDER } from "@/models/read-list-book";
 
 import { getReadList, removeReadListBook, setReadBookStatus } from "@/storage/read-list-storage";
 import { getWordCounts } from "@/storage/words-storage";
+import { consumePendingReadFilter } from "@/utils/pending-read-filter";
 import { showActionSheet } from "@/utils/show-action-sheet";
 
 import { ACCENT, Colors } from "@/styles/global";
@@ -40,21 +41,6 @@ export default function ReadListScreen() {
     // Connects this list to the scroll-to-top button shared across tabs.
     const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll<ReadListBook>();
 
-    // When another screen navigates here with a `filter` param (e.g. saving a book's
-    // status), switch to that filter, then clear the param so re-saving the same
-    // status fires again and manually changing tabs later doesn't reset the filter.
-    const params = useLocalSearchParams<{ filter?: string }>();
-    useEffect(() => {
-        const f = params.filter;
-        if (!f) {
-            return;
-        }
-        if (f === 'all' || READ_STATUS_ORDER.includes(f as ReadStatus)) {
-            setFilter(f as StatusFilter);
-        }
-        router.setParams({ filter: undefined });
-    }, [params.filter]);
-
     // The books actually shown: apply the status filter, then order by word count
     // (most words first). Copy before sorting so we don't mutate the readList state
     // array; the sort is stable, so books with the same count keep their existing
@@ -70,6 +56,13 @@ export default function ReadListScreen() {
     // elsewhere (e.g. adding a book or words) show up here.
     useFocusEffect(
         useCallback(() => {
+            // If a status was just chosen on the book screen, switch to its filter
+            // (covers back-button returns, not only the "Update read list" button).
+            const pending = consumePendingReadFilter();
+            if (pending) {
+                setFilter(pending);
+            }
+
             getReadList().then((books) => {
                 // Show the list immediately; word counts are secondary, so fill them in after.
                 setReadList(books);
