@@ -7,7 +7,38 @@ export type { ReadListBook, ReadStatus } from "@/models/read-list-book";
 const READ_LIST_KEY = "read_list";
 
 export async function getReadList(): Promise<ReadListBook[]> {
-    return getJSON<ReadListBook[]>(READ_LIST_KEY, []);
+    const books = await getJSON<ReadListBook[]>(READ_LIST_KEY, []);
+
+    // One-time migrations for books saved by older versions:
+    //  - the "reading" status was renamed to "currently_reading"
+    //  - the book-level "notes" field was renamed to "bookNotes"
+    let changed = false;
+    const migrated = books.map((book) => {
+        const legacy = book as ReadListBook & { notes?: string };
+
+        let status = book.status;
+        if ((status as string) === 'reading') {
+            status = 'currently_reading' as ReadStatus;
+        }
+
+        const hasLegacyNotes = legacy.notes !== undefined && book.bookNotes === undefined;
+        if (status === book.status && !hasLegacyNotes) {
+            return book;
+        }
+
+        changed = true;
+        const next: ReadListBook & { notes?: string } = { ...book, status };
+        if (hasLegacyNotes) {
+            next.bookNotes = legacy.notes;
+            delete next.notes;
+        }
+        return next;
+    });
+
+    if (changed) {
+        await setReadList(migrated);
+    }
+    return migrated;
 }
 
 export async function setReadList(books: ReadListBook[]): Promise<void> {
