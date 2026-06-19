@@ -118,11 +118,11 @@ function buildStyles(C: typeof Colors.light) {
         statusText_want: {
             color: C.textMuted,
         },
-        // "Reading" — accent
-        status_reading: {
+        // "Currently reading" — accent
+        status_currently_reading: {
             borderColor: ACCENT,
         },
-        statusText_reading: {
+        statusText_currently_reading: {
             color: ACCENT,
         },
         // "Read" — filled accent
