@@ -4,9 +4,41 @@ import { clearAllBookData } from "@/storage/read-list-storage";
 import { Colors, ERROR } from "@/styles/global";
 import { showActionSheet } from "@/utils/show-action-sheet";
 import { Link, router, type Href } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { version, license } from "../../../package.json";
+
+// The services that power the app. `pro` providers are placeholders for a future
+// paid version — selecting one shows an upsell rather than actually switching.
+type SourceProvider = { name: string; pro?: boolean };
+type BookSource = {
+    category: string;
+    description: string;
+    active: string;              // currently-used provider (free)
+    providers: SourceProvider[]; // options shown in the chooser
+};
+
+const SOURCES: BookSource[] = [
+    {
+        category: 'Books',
+        description: 'Where Word Bank finds books and their covers.',
+        active: 'Open Library',
+        providers: [{ name: 'Open Library' }, { name: 'Google Books', pro: true }],
+    },
+    {
+        category: 'Definitions',
+        description: 'Where word meanings and example sentences come from.',
+        active: 'Wiktionary & Free Dictionary',
+        providers: [{ name: 'Wiktionary & Free Dictionary' }, { name: 'Urban Dictionary', pro: true }],
+    },
+];
+
+// Developer-facing links to the actual APIs behind the sources above.
+const API_LINKS: { label: string; href: string }[] = [
+    { label: 'Open Library API', href: 'https://openlibrary.org/developers/api' },
+    { label: 'Free Dictionary API', href: 'https://dictionaryapi.dev' },
+    { label: 'Wiktionary API (wiktapi.dev)', href: 'https://github.com/TheAlexLichter/wiktapi.dev' },
+];
 
 type RowProps = {
     label: string;
@@ -57,6 +89,38 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     );
 }
 
+// A tappable source row: shows the area, the provider in use, and a plain-language
+// description. Tapping opens the provider chooser.
+function SourceRow({ source, first, onPress }: { source: BookSource; first?: boolean; onPress: () => void }) {
+    const styles = useThemedStyles(lightStyles, darkStyles);
+    return (
+        <Pressable style={[styles.sourceRow, !first && styles.rowBorder]} onPress={onPress}>
+            <View style={styles.sourceMain}>
+                <Text style={styles.sourceCategory}>{source.category}</Text>
+                <Text style={styles.sourceProvider}>{source.active}</Text>
+                <Text style={styles.sourceDescription}>{source.description}</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+        </Pressable>
+    );
+}
+
+// Lets you pick a provider. The active (free) one is the only working choice for now;
+// Pro options show an upsell instead of switching (placeholder for a future version).
+function handleChooseSource(source: BookSource): void {
+    showActionSheet(source.category, 'Choose where this comes from', [
+        ...source.providers.map((p) => ({
+            text: `${p.name === source.active ? '✓ ' : ''}${p.name}${p.pro ? '  (Pro)' : ''}`,
+            onPress: () => {
+                if (p.pro) {
+                    Alert.alert('Word Bank Pro', `${p.name} will be available in a future Pro version.`);
+                }
+            },
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+    ]);
+}
+
 function handleDeleteAll(): void {
     showActionSheet(
         "Delete all data",
@@ -95,11 +159,28 @@ export default function MoreScreen() {
                 <Row label="Delete all data" danger onPress={handleDeleteAll} />
             </Section>
 
+            <Section title="Sources">
+                {SOURCES.map((source, i) => (
+                    <SourceRow
+                        key={source.category}
+                        source={source}
+                        first={i === 0}
+                        onPress={() => handleChooseSource(source)}
+                    />
+                ))}
+            </Section>
+
             <Section title="About">
                 <Row label="About" href="/about" chevron first />
                 <Row label="Source code" href="https://github.com/word-bank/word-bank" chevron />
                 <Row label="Version" value={version} />
                 <Row label="License" value={license} />
+            </Section>
+
+            <Section title="Developer">
+                {API_LINKS.map((link, i) => (
+                    <Row key={link.href} label={link.label} href={link.href as Href} chevron first={i === 0} />
+                ))}
             </Section>
         </ScrollView>
     );
@@ -149,6 +230,34 @@ function buildStyles(C: typeof Colors.light) {
         },
         rowLabelDanger: {
             color: ERROR,
+        },
+        sourceRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            gap: 8,
+        },
+        sourceMain: {
+            flex: 1,
+            gap: 2,
+        },
+        sourceCategory: {
+            fontSize: 12,
+            fontWeight: '600',
+            color: C.textMuted,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+        },
+        sourceProvider: {
+            fontSize: 15,
+            fontWeight: '500',
+            color: C.text,
+        },
+        sourceDescription: {
+            fontSize: 13,
+            color: C.textMuted,
+            lineHeight: 18,
         },
         rowRight: {
             flexDirection: 'row',
