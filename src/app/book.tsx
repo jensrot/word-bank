@@ -31,6 +31,7 @@ import { ACCENT, Colors, ERROR, Fonts } from "@/styles/global";
 import ClearableTextInput from "@/components/ClearableTextInput";
 import CoverImage from "@/components/CoverImage";
 import CoverPlaceholder from "@/components/CoverPlaceholder";
+import DefinitionModal from "@/components/DefinitionModal";
 import LanguageModal from "@/components/LanguageModal";
 import ReadStatusSelector from "@/components/ReadStatusSelector";
 
@@ -79,6 +80,8 @@ export default function BookDetail() {
     const [error, setError] = useState<string>("");
     const [editingWord, setEditingWord] = useState<string | null>(null);
     const [draft, setDraft] = useState<EditDraft>({ sentence: '', notes: '' });
+    // Which word's definition picker is open (null = none).
+    const [definitionPickerWord, setDefinitionPickerWord] = useState<string | null>(null);
 
     const [editingMeta, setEditingMeta] = useState<boolean>(false);
     const [metaTitle, setMetaTitle] = useState<string>(title ?? '');
@@ -89,11 +92,11 @@ export default function BookDetail() {
 
     // Book-level review and general notes (saved on the read-list entry).
     const [review, setReview] = useState<string>('');
-    const [notes, setNotes] = useState<string>('');
+    const [bookNotes, setBookNotes] = useState<string>('');
     const [editingReview, setEditingReview] = useState<boolean>(false);
-    const [editingNotes, setEditingNotes] = useState<boolean>(false);
+    const [editingBookNotes, setEditingBookNotes] = useState<boolean>(false);
     const [reviewDraft, setReviewDraft] = useState<string>('');
-    const [notesDraft, setNotesDraft] = useState<string>('');
+    const [bookNotesDraft, setBookNotesDraft] = useState<string>('');
 
     const [inReadList, setInReadList] = useState<boolean>(false);
     const [readStatus, setReadStatus] = useState<ReadStatus>('want'); // Initial value is: "Want to read"
@@ -162,7 +165,7 @@ export default function BookDetail() {
             if (entry) {
                 setReadStatus(entry.status);
                 setReview(entry.review ?? '');
-                setNotes(entry.notes ?? '');
+                setBookNotes(entry.bookNotes ?? '');
             }
         });
     }, [key]);
@@ -178,7 +181,7 @@ export default function BookDetail() {
             cover_i: coverUri ?? '',
             status: readStatus,
             review: review || undefined,
-            notes: notes || undefined,
+            bookNotes: bookNotes || undefined,
             ...overrides,
         };
     }
@@ -219,7 +222,7 @@ export default function BookDetail() {
 
     async function saveToReadList(): Promise<void> {
         await persistToReadList(readStatus);
-        router.navigate('/(tabs)/read-list');
+        router.navigate({ pathname: '/(tabs)/read-list', params: { filter: readStatus } });
     }
 
     async function handlePickCover(): Promise<void> {
@@ -254,19 +257,38 @@ export default function BookDetail() {
         setEditingReview(false);
     }
 
-    async function handleSaveNotes(): Promise<void> {
+    async function handleSaveBookNotes(): Promise<void> {
         Keyboard.dismiss();
 
-        const trimmedNotes = notesDraft.trim();
-        setNotes(trimmedNotes);
-        await upsertReadListBook(buildReadListEntry({ notes: trimmedNotes || undefined }));
+        const trimmedNotes = bookNotesDraft.trim();
+        setBookNotes(trimmedNotes);
+        await upsertReadListBook(buildReadListEntry({ bookNotes: trimmedNotes || undefined }));
         setInReadList(true);
-        setEditingNotes(false);
+        setEditingBookNotes(false);
     }
 
     function handleSelectLanguage(language: Language): void {
         setLanguage(language);
         setLanguageCode(language.code);
+    }
+
+    // Switches which of a word's definitions is shown, denormalizing the chosen one
+    // onto the entry's display fields so the card and Words List reflect it.
+    async function handleSelectDefinition(word: string, index: number): Promise<void> {
+        const updated = words.map((w) => {
+            const def = w.definitions?.[index];
+            if (w.word !== word || !def) {
+                return w;
+            }
+            return {
+                ...w,
+                selectedDefinition: index,
+                partOfSpeech: def.partOfSpeech,
+                definition: def.definition,
+                exampleSentence: def.exampleSentence,
+            };
+        });
+        await persistWords(updated);
     }
 
     function handleChangeInput(text: string): void {
@@ -347,6 +369,9 @@ export default function BookDetail() {
             setInReadList(true);
         }
     }
+
+    // The word whose definition picker is currently open, if any.
+    const definitionPickerEntry = words.find((w) => w.word === definitionPickerWord);
 
     return (
         <React.Fragment>
@@ -523,6 +548,18 @@ export default function BookDetail() {
                                         <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
                                         <Text style={styles.definition}>{item.definition}</Text>
 
+                                        {item.definitions && item.definitions.length > 1 ? (
+                                            <Pressable
+                                                hitSlop={8}
+                                                style={styles.chooseDefinitionButton}
+                                                onPress={() => setDefinitionPickerWord(item.word)}
+                                            >
+                                                <Text style={styles.chooseDefinitionText}>
+                                                    Choose other definition ({item.definitions.length}) ›
+                                                </Text>
+                                            </Pressable>
+                                        ) : null}
+
                                         {!isEditing && item.sentence ? (
                                             <View style={styles.metaBlock}>
                                                 <Text style={styles.metaLabel}>Sentence</Text>
@@ -590,7 +627,55 @@ export default function BookDetail() {
                         style={styles.bookNotesSection}
                         onLayout={(e) => { bookNotesY.current = e.nativeEvent.layout.y; }}
                     >
-                        <Text style={styles.sectionLabel}>Book Notes</Text>
+                        <Text style={styles.sectionLabel}>Notes</Text>
+                        <View style={styles.card}>
+                            <View style={styles.labelRow}>
+                                <Text style={styles.metaLabel}>Book Notes</Text>
+                                <Pressable
+                                    style={styles.editButton}
+                                    hitSlop={8}
+                                    onPress={() => {
+                                        if (editingBookNotes) {
+                                            setEditingBookNotes(false);
+                                        } else {
+                                            setBookNotesDraft(bookNotes);
+                                            setEditingBookNotes(true);
+                                        }
+                                    }}
+                                >
+                                    <Text style={styles.editText}>{editingBookNotes ? 'Cancel' : 'Edit'}</Text>
+                                </Pressable>
+                            </View>
+                            {editingBookNotes ? (
+                                <React.Fragment>
+                                    <TextInput
+                                        style={styles.editInput}
+                                        placeholder="General notes about this book…"
+                                        placeholderTextColor={placeholderColor}
+                                        value={bookNotesDraft}
+                                        onChangeText={setBookNotesDraft}
+                                        multiline
+                                        autoCorrect
+                                        textAlignVertical="top"
+                                    />
+                                    <Pressable
+                                        style={styles.saveButton}
+                                        onPress={handleSaveBookNotes}
+                                    >
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    </Pressable>
+                                </React.Fragment>
+                            ) : bookNotes ? (
+                                <Pressable onPress={() => { setBookNotesDraft(bookNotes); setEditingBookNotes(true); }}>
+                                    <Text style={styles.metaValue}>{bookNotes}</Text>
+                                </Pressable>
+                            ) : (
+                                <Pressable onPress={() => { setBookNotesDraft(''); setEditingBookNotes(true); }}>
+                                    <Text style={styles.bookNotesPlaceholder}>Add book notes…</Text>
+                                </Pressable>
+                            )}
+                        </View>
+
                         <View style={styles.card}>
                             <View style={styles.labelRow}>
                                 <Text style={styles.metaLabel}>My Review</Text>
@@ -630,56 +715,12 @@ export default function BookDetail() {
                                     </Pressable>
                                 </React.Fragment>
                             ) : review ? (
-                                <Text style={styles.metaValue}>{review}</Text>
+                                <Pressable onPress={() => { setReviewDraft(review); setEditingReview(true); }}>
+                                    <Text style={styles.metaValue}>{review}</Text>
+                                </Pressable>
                             ) : (
                                 <Pressable onPress={() => { setReviewDraft(''); setEditingReview(true); }}>
-                                    <Text style={styles.bookNotesPlaceholder}>Add a review…</Text>
-                                </Pressable>
-                            )}
-                        </View>
-
-                        <View style={styles.card}>
-                            <View style={styles.labelRow}>
-                                <Text style={styles.metaLabel}>Notes</Text>
-                                <Pressable
-                                    style={styles.editButton}
-                                    hitSlop={8}
-                                    onPress={() => {
-                                        if (editingNotes) {
-                                            setEditingNotes(false);
-                                        } else {
-                                            setNotesDraft(notes);
-                                            setEditingNotes(true);
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.editText}>{editingNotes ? 'Cancel' : 'Edit'}</Text>
-                                </Pressable>
-                            </View>
-                            {editingNotes ? (
-                                <React.Fragment>
-                                    <TextInput
-                                        style={styles.editInput}
-                                        placeholder="General notes about this book…"
-                                        placeholderTextColor={placeholderColor}
-                                        value={notesDraft}
-                                        onChangeText={setNotesDraft}
-                                        multiline
-                                        autoCorrect
-                                        textAlignVertical="top"
-                                    />
-                                    <Pressable
-                                        style={styles.saveButton}
-                                        onPress={handleSaveNotes}
-                                    >
-                                        <Text style={styles.saveButtonText}>Save</Text>
-                                    </Pressable>
-                                </React.Fragment>
-                            ) : notes ? (
-                                <Text style={styles.metaValue}>{notes}</Text>
-                            ) : (
-                                <Pressable onPress={() => { setNotesDraft(''); setEditingNotes(true); }}>
-                                    <Text style={styles.bookNotesPlaceholder}>Add notes…</Text>
+                                    <Text style={styles.bookNotesPlaceholder}>Add a review of the book…</Text>
                                 </Pressable>
                             )}
                         </View>
@@ -698,6 +739,17 @@ export default function BookDetail() {
                     </View>
                 )}
             </View>
+
+            {definitionPickerEntry ? (
+                <DefinitionModal
+                    visible={!!definitionPickerWord}
+                    onClose={() => setDefinitionPickerWord(null)}
+                    word={definitionPickerEntry.word}
+                    definitions={definitionPickerEntry.definitions ?? []}
+                    selectedIndex={definitionPickerEntry.selectedDefinition ?? 0}
+                    onSelect={(index) => handleSelectDefinition(definitionPickerEntry.word, index)}
+                />
+            ) : null}
 
             {editingWord ? <KeyboardToolbar /> : null}
         </React.Fragment>
@@ -934,6 +986,15 @@ function buildStyles(C: typeof Colors.light) {
             fontSize: 14,
             color: C.textBody,
             lineHeight: 20,
+        },
+        chooseDefinitionButton: {
+            alignSelf: 'flex-start',
+            marginTop: 4,
+        },
+        chooseDefinitionText: {
+            fontSize: 13,
+            color: ACCENT,
+            fontWeight: '500',
         },
         metaBlock: {
             marginTop: 6,
