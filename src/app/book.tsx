@@ -21,6 +21,7 @@ import { getWords, setWords } from "@/storage/words-storage";
 
 import { coverUri as coverImageUri } from "@/utils/cover-uri";
 import { pickCoverImage } from "@/utils/pick-cover-image";
+import { setPendingReadFilter } from "@/utils/pending-read-filter";
 import { showActionSheet } from "@/utils/show-action-sheet";
 import { fetchDefinition } from "@/utils/words-api";
 
@@ -217,12 +218,16 @@ export default function BookDetail() {
     async function handleChangeReadStatus(status: ReadStatus): Promise<void> {
         setReadStatus(status);
         await persistToReadList(status);
+        // Remember the chosen status so the Read List shows the matching filter on
+        // return — including via the back button, which can't carry a route param.
+        setPendingReadFilter(status);
         maybePromptForReviewCheck(status);
     }
 
     async function saveToReadList(): Promise<void> {
         await persistToReadList(readStatus);
-        router.navigate({ pathname: '/(tabs)/read-list', params: { filter: readStatus } });
+        setPendingReadFilter(readStatus);
+        router.navigate('/(tabs)/read-list');
     }
 
     async function handlePickCover(): Promise<void> {
