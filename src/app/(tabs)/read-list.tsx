@@ -1,8 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Link, useFocusEffect } from "expo-router";
+import { Link, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
@@ -39,6 +39,21 @@ export default function ReadListScreen() {
 
     // Connects this list to the scroll-to-top button shared across tabs.
     const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll<ReadListBook>();
+
+    // When another screen navigates here with a `filter` param (e.g. saving a book's
+    // status), switch to that filter, then clear the param so re-saving the same
+    // status fires again and manually changing tabs later doesn't reset the filter.
+    const params = useLocalSearchParams<{ filter?: string }>();
+    useEffect(() => {
+        const f = params.filter;
+        if (!f) {
+            return;
+        }
+        if (f === 'all' || READ_STATUS_ORDER.includes(f as ReadStatus)) {
+            setFilter(f as StatusFilter);
+        }
+        router.setParams({ filter: undefined });
+    }, [params.filter]);
 
     // The books actually shown: apply the status filter, then order by word count
     // (most words first). Copy before sorting so we don't mutate the readList state
@@ -77,6 +92,7 @@ export default function ReadListScreen() {
                     onPress: async () => {
                         const updated = await setReadBookStatus(item.key, status);
                         setReadList(updated);
+                        setFilter(status);
                     },
                 })),
                 { text: 'Cancel', style: 'cancel' as const },
