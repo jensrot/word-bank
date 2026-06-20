@@ -1,3 +1,5 @@
+import '../../global.css';
+
 import ActionSheetBridge from '@/components/ActionSheetBridge';
 import { AppThemeProvider, useTheme } from '@/context/theme-context';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
