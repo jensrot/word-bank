@@ -97,7 +97,7 @@ export default function CustomBookScreen() {
                     <CoverImage
                         uri={coverUri}
                         style={styles.cover}
-                        placeholder={<CoverPlaceholder size={40} />}
+                        placeholder={<CoverPlaceholder size={32} />}
                     />
                     <Pressable style={styles.pickButton} onPress={handlePickImage}>
                         <Text style={styles.pickButtonText}>
@@ -167,16 +167,17 @@ function buildStyles(C: typeof Colors.light) {
             backgroundColor: C.background,
         },
         scrollContent: {
-            padding: 20,
-            gap: 24,
+            padding: 16,
+            gap: 16,
         },
         coverRow: {
+            flexDirection: 'row',
             alignItems: 'center',
-            gap: 14,
+            gap: 16,
         },
         cover: {
-            width: 120,
-            height: 160,
+            width: 96,
+            height: 128,
             borderRadius: 8,
         },
         pickButton: {
