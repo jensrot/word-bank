@@ -322,7 +322,10 @@ export default function BookDetail() {
             // Only close the keyboard on pressing add button when a word is found
             // When it shows an error the keyboard stays open so the user can easily edit the input and try again
             Keyboard.dismiss();
-            await persistWords([newEntry, ...words]);
+
+            // Added timestamp for sorting by "Recently added" in the Words List. 
+            // This is not part of the dictionary data, so it's added here.
+            await persistWords([{ ...newEntry, addedAt: Date.now() }, ...words]);
             setWordAdded(true);
             setInput("");
 

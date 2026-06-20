@@ -12,6 +12,7 @@ import { getWords } from "@/storage/words-storage";
 
 import { ACCENT, Colors } from "@/styles/global";
 import { openBook } from "@/utils/open-book";
+import { showActionSheet } from "@/utils/show-action-sheet";
 
 import WordListItem, { type WordWithBook } from "@/components/WordListItem";
 import ClearableTextInput from "@/components/ClearableTextInput";
@@ -27,6 +28,17 @@ const POS_FILTERS: { value: PosFilter; label: string }[] = [
     { value: 'noun', label: 'Nouns' },
     { value: 'adjective', label: 'Adjectives' },
 ];
+
+// How the list is ordered: alphabetical (both directions), grouped by the book each
+// word came from, or newest-added first.
+type SortMode = 'az' | 'za' | 'book' | 'recent';
+const SORT_MODES: SortMode[] = ['az', 'za', 'book', 'recent'];
+const SORT_LABELS: Record<SortMode, string> = {
+    az: 'A–Z',
+    za: 'Z–A',
+    book: 'By book',
+    recent: 'Recently added',
+};
 
 // Whether a word's part of speech matches the selected filter. Matches across both
 // dictionaries (dictionaryapi.dev says "adjective"; wiktapi/kaikki says "adj").
@@ -50,6 +62,7 @@ export default function WordsListScreen() {
     const [loading, setLoading] = useState<boolean>(true);
     const [search, setSearch] = useState<string>('');
     const [posFilter, setPosFilter] = useState<PosFilter>('all');
+    const [sortMode, setSortMode] = useState<SortMode>('az');
 
     const isFocused = useIsFocused();
 
@@ -71,7 +84,7 @@ export default function WordsListScreen() {
                         bookCover: book.cover_i,
                     }))
                 );
-                flat.sort((a, b) => a.word.localeCompare(b.word)); // A–Z
+                // Ordering is handled by the `filtered` memo (depends on the sort mode).
                 setAllWords(flat);
                 setLoading(false);
             });
@@ -89,14 +102,24 @@ export default function WordsListScreen() {
     // Types out one of your saved words while the search box is empty; Enter accepts it.
     const { text: typedPlaceholder, word } = useTypewriterPlaceholder(wordSuggestions, isFocused && !search);
 
-    // Keep only the words that match the part-of-speech filter and the search box.
+    // Keep the words matching the POS filter + search box, then order them by the
+    // chosen sort mode. `.filter` returns a fresh array, so sorting it doesn't mutate allWords.
     const filtered = useMemo(() => {
         const query = search.trim().toLowerCase();
-        return allWords.filter((w) =>
+        const result = allWords.filter((w) =>
             matchesPos(w.partOfSpeech, posFilter)
             && (!query || w.word.toLowerCase().includes(query))
         );
-    }, [allWords, search, posFilter]);
+        result.sort((a, b) => {
+            switch (sortMode) {
+                case 'za': return b.word.localeCompare(a.word);
+                case 'book': return a.bookTitle.localeCompare(b.bookTitle) || a.word.localeCompare(b.word);
+                case 'recent': return (b.addedAt ?? 0) - (a.addedAt ?? 0) || a.word.localeCompare(b.word);
+                default: return a.word.localeCompare(b.word); // 'az'
+            }
+        });
+        return result;
+    }, [allWords, search, posFilter, sortMode]);
 
     // How many saved words fall under each filter, shown on the pills themselves.
     const posCounts = useMemo<Record<PosFilter, number>>(() => ({
@@ -110,6 +133,17 @@ export default function WordsListScreen() {
         Keyboard.dismiss();
         // if placeholder is shown use that as the search query instead of showing empty results for empty query
         setSearch(search.trim() || word);
+    }
+
+    // Pick how the list is ordered (alphabetical or grouped by book).
+    function handleChooseSort(): void {
+        showActionSheet('Sort words:', undefined, [
+            ...SORT_MODES.map((mode) => ({
+                text: `${sortMode === mode ? '✓ ' : ''}${SORT_LABELS[mode]}`,
+                onPress: () => setSortMode(mode),
+            })),
+            { text: 'Cancel', style: 'cancel' as const },
+        ]);
     }
 
     // Open the book this word belongs to.
@@ -172,6 +206,13 @@ export default function WordsListScreen() {
                         </Pressable>
                     );
                 })}
+            </View>
+
+            {/* Sort control */}
+            <View style={styles.sortRow}>
+                <Pressable onPress={handleChooseSort} hitSlop={8} style={styles.sortButton}>
+                    <Text style={styles.sortButtonText}>Sort words: {SORT_LABELS[sortMode]} ▾</Text>
+                </Pressable>
             </View>
 
             <FlatList
@@ -246,6 +287,19 @@ function buildStyles(C: typeof Colors.light) {
         },
         filterTextSelected: {
             color: '#fff',
+        },
+        sortRow: {
+            paddingHorizontal: 16,
+            paddingBottom: 8,
+            alignItems: 'flex-end',
+        },
+        sortButton: {
+            paddingVertical: 2,
+        },
+        sortButtonText: {
+            fontSize: 13,
+            fontWeight: '600',
+            color: ACCENT,
         },
         search: {
             height: 40,
