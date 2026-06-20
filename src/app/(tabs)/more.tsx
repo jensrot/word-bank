@@ -154,6 +154,11 @@ export default function MoreScreen() {
             scrollEventThrottle={scrollEventThrottle}
             onScroll={onScroll}
         >
+            {/* NativeWind smoke test — remove once confirmed working. */}
+            <Text className="rounded-lg bg-blue-500 py-3 text-center text-base font-bold text-white">
+                NativeWind is working ✓
+            </Text>
+
             <Section title="Your data">
                 <Row label="Export Books" chevron first />
                 <Row label="Import Books" chevron />
