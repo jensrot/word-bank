@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
+    ReduceMotion,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
@@ -22,15 +23,20 @@ function LoadingDot({ delay }: { delay: number }) {
     const opacity = useSharedValue(0.3);
 
     useEffect(() => {
+        // ReduceMotion.Never so the dots still animate when the device has
+        // "Remove animations" / Power saving on (Reanimated otherwise snaps to the
+        // end value and the "..." looks frozen — common on Samsung One UI).
         opacity.value = withDelay(
             delay,
             withRepeat(
                 withSequence(
-                    withTiming(1, { duration: 350 }),
-                    withTiming(0.3, { duration: 350 }),
+                    withTiming(1, { duration: 350, reduceMotion: ReduceMotion.Never }),
+                    withTiming(0.3, { duration: 350, reduceMotion: ReduceMotion.Never }),
                 ),
                 -1,
                 false,
+                undefined,
+                ReduceMotion.Never,
             ),
         );
     }, [delay, opacity]);
