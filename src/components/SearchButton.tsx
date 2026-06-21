@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -8,8 +8,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from "react-native-reanimated";
-
-import { ACCENT } from "@/styles/global";
 
 type SearchButtonProps = {
     onPress: () => void;
@@ -41,7 +39,7 @@ function LoadingDot({ delay }: { delay: number }) {
 
     return (
         <Animated.View style={animStyle}>
-            <Text style={styles.buttonText}>.</Text>
+            <Text className="text-base font-semibold text-white">.</Text>
         </Animated.View>
     );
 }
@@ -51,41 +49,21 @@ function LoadingDot({ delay }: { delay: number }) {
 export default function SearchButton({ onPress, loading = false, label = "Search", style }: SearchButtonProps) {
     return (
         <Pressable
-            style={[styles.button, loading && styles.buttonDisabled, style]}
+            className={`items-center rounded-lg bg-accent py-2.5 ${loading ? "opacity-60" : ""}`}
+            style={style}
             onPress={onPress}
             disabled={loading}
         >
             {loading ? (
-                <View style={styles.loadingRow}>
-                    <Text style={styles.buttonText}>Searching</Text>
+                <View className="flex-row items-center">
+                    <Text className="text-base font-semibold text-white">Searching</Text>
                     <LoadingDot delay={0} />
                     <LoadingDot delay={150} />
                     <LoadingDot delay={300} />
                 </View>
             ) : (
-                <Text style={styles.buttonText}>{label}</Text>
+                <Text className="text-base font-semibold text-white">{label}</Text>
             )}
         </Pressable>
     );
 }
-
-const styles = StyleSheet.create({
-    button: {
-        backgroundColor: ACCENT,
-        paddingVertical: 10,
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    buttonDisabled: {
-        opacity: 0.6,
-    },
-    loadingRow: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-});
