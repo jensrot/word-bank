@@ -1,10 +1,9 @@
 import { useCallback, useState } from "react";
 
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 
 import { Link, useFocusEffect } from "expo-router";
 
-import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
 
 import type { ReadListBook, ReadStatus } from "@/models/read-list-book";
@@ -15,7 +14,7 @@ import { getWordCounts } from "@/storage/words-storage";
 import { consumePendingReadFilter } from "@/utils/pending-read-filter";
 import { showActionSheet } from "@/utils/show-action-sheet";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { ACCENT } from "@/styles/global";
 
 import { openBook } from "@/utils/open-book";
 
@@ -31,8 +30,6 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function ReadListScreen() {
-    const styles = useThemedStyles(lightStyles, darkStyles);
-
     const [readList, setReadList] = useState<ReadListBook[]>([]); // all saved books
     const [readListLoading, setReadListLoading] = useState<boolean>(true); // true until the first load finishes
     const [filter, setFilter] = useState<StatusFilter>('all'); // Initial value is: "All"
@@ -115,28 +112,28 @@ export default function ReadListScreen() {
     // While the first load is happening, show a spinner instead of an empty screen.
     if (readListLoading) {
         return (
-            <View style={styles.container}>
-                <ActivityIndicator style={styles.loader} color={ACCENT} />
+            <View className="flex-1 bg-background">
+                <ActivityIndicator className="mt-12" color={ACCENT} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View className="flex-1 bg-background">
             {/* Row of filter pills: tap one to show only books with that status. */}
-            <View style={styles.filterRow}>
+            <View className="flex-row gap-2 px-4 pb-2 pt-3">
                 {FILTERS.map(({ value, label }) => {
                     const selected = filter === value;
                     return (
                         <Pressable
                             key={value}
                             onPress={() => setFilter(value)}
-                            style={[styles.filterPill, selected && styles.filterPillSelected]}
+                            className={`flex-1 items-center justify-center rounded-lg border px-1 py-1.75 ${selected ? "border-accent bg-accent" : "border-border-input bg-input"}`}
                             accessibilityRole="button"
                             accessibilityState={{ selected }}
                         >
                             <Text
-                                style={[styles.filterText, selected && styles.filterTextSelected]}
+                                className={`text-xs font-semibold ${selected ? "text-white" : "text-muted"}`}
                                 numberOfLines={1}
                                 adjustsFontSizeToFit
                                 minimumFontScale={0.7}
@@ -153,25 +150,25 @@ export default function ReadListScreen() {
                 ref={flatListRef}
                 data={filteredList}
                 keyExtractor={(item) => item.key}
-                contentContainerStyle={styles.list}
+                contentContainerClassName="px-4 pb-8"
                 scrollEventThrottle={scrollEventThrottle}
                 onScroll={onScroll}
                 // Shown when there's nothing to display: either no books at all,
                 // or none matching the current filter.
                 ListEmptyComponent={
                     readList.length === 0 ? (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyTitle}>No books yet</Text>
-                            <Link href="/" style={styles.emptyLink}>
+                        <View className="mt-16 items-center gap-2.5 px-8">
+                            <Text className="text-lg font-semibold text-fg">No books yet</Text>
+                            <Link href="/" className="text-center text-sm text-accent">
                                 Search for a book on the Search tab, open it, and save it to your read list.
                             </Link>
                         </View>
                     ) : (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyTitle}>
+                        <View className="mt-16 items-center gap-2.5 px-8">
+                            <Text className="text-lg font-semibold text-fg">
                                 {filter === 'all' ? 'No books yet' : `Nothing under "${READ_STATUS_LABELS[filter as ReadStatus]}"`}
                             </Text>
-                            <Text style={styles.emptyHint}>
+                            <Text className="text-center text-sm text-muted">
                                 Tap a book&apos;s status badge to move it here.
                             </Text>
                         </View>
@@ -191,75 +188,3 @@ export default function ReadListScreen() {
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        filterRow: {
-            flexDirection: 'row',
-            gap: 8,
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: 8,
-        },
-        filterPill: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 7,
-            paddingHorizontal: 4,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            backgroundColor: C.backgroundInput,
-        },
-        filterPillSelected: {
-            borderColor: ACCENT,
-            backgroundColor: ACCENT,
-        },
-        filterText: {
-            fontSize: 12,
-            fontWeight: '600',
-            color: C.textMuted,
-        },
-        filterTextSelected: {
-            color: '#fff',
-        },
-        list: {
-            paddingHorizontal: 16,
-            paddingBottom: 32,
-        },
-        loader: {
-            marginTop: 48,
-        },
-        emptyContainer: {
-            marginTop: 64,
-            alignItems: 'center',
-            paddingHorizontal: 32,
-            gap: 10,
-        },
-        emptyTitle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: C.text,
-        },
-        emptyLink: {
-            fontSize: 14,
-            color: ACCENT,
-            textAlign: 'center',
-            lineHeight: 21,
-        },
-        emptyHint: {
-            fontSize: 14,
-            color: C.textMuted,
-            textAlign: 'center',
-            lineHeight: 21,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

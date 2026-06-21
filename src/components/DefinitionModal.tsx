@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/context/theme-context";
-import { useThemedStyles } from "@/hooks/use-themed-styles";
 
 import type { WordDefinition } from "@/models/word-entry";
 
@@ -37,11 +36,8 @@ const POS_COLORS: Record<string, string> = {
 };
 
 export default function DefinitionModal({ visible, onClose, word, definitions, selectedIndex, onSelect }: DefinitionModalProps) {
-    const scheme = useColorScheme();
     const insets = useSafeAreaInsets();
-
-    const styles = useThemedStyles(lightStyles, darkStyles);
-    const placeholderColor = Colors[scheme].textPlaceholder;
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const [search, setSearch] = useState<string>('');
 
@@ -87,9 +83,9 @@ export default function DefinitionModal({ visible, onClose, word, definitions, s
             onRequestClose={onClose}
         >
             <KeyboardProvider>
-                <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-                    <Pressable style={styles.modalOverlay} onPress={onClose}>
-                        <Pressable style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]}>
+                <KeyboardAvoidingView behavior="padding" className="flex-1">
+                    <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
+                        <Pressable className="max-h-[70%] rounded-t-2xl bg-background" style={{ paddingBottom: insets.bottom + 16 }}>
                             <FlatList
                                 data={rows}
                                 keyExtractor={(row, index) => (row.type === 'header' ? `h_${index}` : `d_${row.index}`)}
@@ -97,7 +93,10 @@ export default function DefinitionModal({ visible, onClose, word, definitions, s
                                 renderItem={({ item: row }) => {
                                     if (row.type === 'header') {
                                         return (
-                                            <Text style={[styles.posHeader, { color: POS_COLORS[row.pos.toLowerCase()] ?? ACCENT }]}>
+                                            <Text
+                                                className="px-4 pb-1 pt-3.5 text-xs font-bold uppercase tracking-[0.5px]"
+                                                style={{ color: POS_COLORS[row.pos.toLowerCase()] ?? ACCENT }}
+                                            >
                                                 {row.pos}
                                             </Text>
                                         );
@@ -105,34 +104,35 @@ export default function DefinitionModal({ visible, onClose, word, definitions, s
                                     const active = row.index === selectedIndex;
                                     return (
                                         <Pressable
-                                            style={[styles.option, active && styles.optionActive]}
+                                            className={`flex-row items-start gap-2 border-b border-border px-4 py-3 ${active ? "bg-card" : ""}`}
                                             onPress={() => handleSelect(row.index)}
                                         >
-                                            <View style={styles.optionBody}>
-                                                <Text style={[styles.optionText, active && styles.optionTextActive]}>
+                                            <View className="flex-1 gap-0.5">
+                                                <Text className={`text-[15px] leading-5 ${active ? "font-semibold text-accent" : "text-fg"}`}>
                                                     {row.def.definition}
                                                 </Text>
                                                 {row.def.exampleSentence ? (
-                                                    <Text style={styles.optionExample}>“{row.def.exampleSentence}”</Text>
+                                                    <Text className="text-[13px] italic leading-5 text-muted">“{row.def.exampleSentence}”</Text>
                                                 ) : null}
                                             </View>
-                                            {active && <Text style={styles.check}>✓</Text>}
+                                            {active && <Text className="mt-0.5 text-sm font-bold text-accent">✓</Text>}
                                         </Pressable>
                                     );
                                 }}
                                 ListEmptyComponent={
-                                    <Text style={styles.empty}>No definitions match &quot;{search}&quot;</Text>
+                                    <Text className="p-6 text-center text-sm text-muted">No definitions match &quot;{search}&quot;</Text>
                                 }
                             />
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle} numberOfLines={1}>Definitions for: {word}</Text>
+                            <View className="flex-row items-center justify-between gap-3 px-4 pb-2 pt-4">
+                                <Text className="flex-1 text-base font-bold text-fg" numberOfLines={1}>Definitions for: {word}</Text>
                                 <Pressable onPress={onClose} hitSlop={12}>
-                                    <Text style={styles.modalClose}>✕</Text>
+                                    <Text className="text-base text-muted">✕</Text>
                                 </Pressable>
                             </View>
 
                             <TextInput
-                                style={styles.modalSearch}
+                                className="mx-4 h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
+                                style={{ textAlignVertical: 'center', includeFontPadding: false }}
                                 placeholder="Search definitions..."
                                 placeholderTextColor={placeholderColor}
                                 value={search}
@@ -146,108 +146,3 @@ export default function DefinitionModal({ visible, onClose, word, definitions, s
         </Modal>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        modalOverlay: {
-            flex: 1,
-            justifyContent: 'flex-end',
-            backgroundColor: 'rgba(0,0,0,0.4)',
-        },
-        modalSheet: {
-            backgroundColor: C.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            maxHeight: '70%',
-        },
-        modalHeader: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            paddingBottom: 8,
-            gap: 12,
-        },
-        modalTitle: {
-            flex: 1,
-            fontSize: 16,
-            fontWeight: '700',
-            color: C.text,
-        },
-        modalClose: {
-            fontSize: 16,
-            color: C.textMuted,
-        },
-        modalSearch: {
-            marginHorizontal: 16,
-            height: 40,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            backgroundColor: C.backgroundInput,
-            paddingHorizontal: 12,
-            paddingVertical: 0,
-            fontSize: 15,
-            color: C.text,
-            textAlignVertical: 'center',
-            includeFontPadding: false,
-        },
-        posHeader: {
-            paddingHorizontal: 16,
-            paddingTop: 14,
-            paddingBottom: 4,
-            fontSize: 12,
-            fontWeight: '700',
-            color: ACCENT,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-        },
-        option: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-            gap: 8,
-        },
-        optionActive: {
-            backgroundColor: C.backgroundCard,
-        },
-        optionBody: {
-            flex: 1,
-            gap: 3,
-        },
-        optionText: {
-            fontSize: 15,
-            color: C.text,
-            lineHeight: 21,
-        },
-        optionTextActive: {
-            color: ACCENT,
-            fontWeight: '600',
-        },
-        optionExample: {
-            fontSize: 13,
-            fontStyle: 'italic',
-            color: C.textMuted,
-            lineHeight: 18,
-        },
-        check: {
-            fontSize: 14,
-            color: ACCENT,
-            fontWeight: '700',
-            marginTop: 2,
-        },
-        empty: {
-            textAlign: 'center',
-            padding: 24,
-            fontSize: 14,
-            color: C.textMuted,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { useIsFocused, usePreventRemove } from "@react-navigation/native";
 
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -27,7 +27,7 @@ import { fetchDefinition } from "@/utils/words-api";
 
 import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 
-import { ACCENT, Colors, ERROR, Fonts } from "@/styles/global";
+import { Colors, Fonts } from "@/styles/global";
 
 import ClearableTextInput from "@/components/ClearableTextInput";
 import CoverImage from "@/components/CoverImage";
@@ -56,12 +56,9 @@ const RANDOM_WORDS = [
 ];
 
 export default function BookDetail() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
     const insets = useSafeAreaInsets();
-    const placeholderColor = scheme === 'dark'
-        ? Colors.dark.textPlaceholder
-        : Colors.light.textPlaceholder;
+    // placeholderTextColor needs a color value (not a class), so keep it themed here.
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const { key, title, author, year, cover_i } = useLocalSearchParams<{
         key: string;
@@ -395,12 +392,13 @@ export default function BookDetail() {
                 }}
             />
 
-            <View style={styles.container}>
+            <View className="flex-1 bg-background">
                 {!editingWord && (
-                    <View style={styles.addRow}>
+                    <View className="flex-row gap-2 p-3 pb-1">
                         <ClearableTextInput
-                            containerStyle={styles.inputContainer}
-                            style={styles.input}
+                            containerClassName="flex-1"
+                            className="h-11 rounded-lg border border-border-input bg-input px-3 text-base text-fg"
+                            style={{ textAlignVertical: 'center', includeFontPadding: false }}
                             placeholder={typedWordPlaceholder || "Add a word..."}
                             placeholderTextColor={placeholderColor}
                             value={input}
@@ -411,44 +409,44 @@ export default function BookDetail() {
                             autoCorrect={false}
                         />
                         <Pressable
-                            style={[styles.addButton, loading && styles.addButtonDisabled]}
+                            className={`min-w-14 items-center justify-center rounded-lg bg-accent px-4 ${loading ? "opacity-60" : ""}`}
                             onPress={handleAddWord}
                             disabled={loading}
                         >
                             {loading ? (
                                 <ActivityIndicator color="#fff" size="small" />
                             ) : (
-                                <Text style={styles.addButtonText}>Add</Text>
+                                <Text className="text-base font-semibold text-white">Add</Text>
                             )}
                         </Pressable>
                     </View>
                 )}
 
-                {error ? <Text style={styles.error}>{error}</Text> : null}
+                {error ? <Text className="px-3 pb-1 text-[13px] text-error">{error}</Text> : null}
 
                 <LanguageModal selected={language} onSelect={handleSelectLanguage} />
 
                 <KeyboardAwareScrollView
                     ref={scrollRef}
                     style={{ flex: 1 }}
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={{ paddingBottom: 24 }}
                     keyboardShouldPersistTaps="handled"
                     // Adjust the space between the keyboard and the selected input to ensure the input is not covered by the keyboard.
                     bottomOffset={230}
                 >
-                    <View style={styles.header}>
+                    <View className="flex-row items-center gap-3.5 border-b border-border p-4">
                         {isCustomBook ? (
                             <Pressable onPress={handlePickCover}>
-                                <CoverImage uri={coverUri} style={styles.cover} placeholder={<CoverPlaceholder size={40} />} />
+                                <CoverImage uri={coverUri} className="h-40 w-30 rounded-lg" radius={8} placeholder={<CoverPlaceholder size={40} />} />
                             </Pressable>
                         ) : (
-                            <CoverImage uri={coverUri} style={styles.cover} placeholder={<CoverPlaceholder size={40} />} />
+                            <CoverImage uri={coverUri} className="h-40 w-30 rounded-lg" radius={8} placeholder={<CoverPlaceholder size={40} />} />
                         )}
-                        <View style={styles.headerInfo}>
+                        <View className="flex-1 justify-center gap-1.5">
                             {editingMeta ? (
                                 <React.Fragment>
                                     <TextInput
-                                        style={styles.metaInput}
+                                        className="rounded-md border border-border-input bg-input px-2 py-1.5 text-sm text-fg"
                                         value={metaTitle}
                                         onChangeText={setMetaTitle}
                                         placeholder="Title"
@@ -456,7 +454,7 @@ export default function BookDetail() {
                                         returnKeyType="next"
                                     />
                                     <TextInput
-                                        style={styles.metaInput}
+                                        className="rounded-md border border-border-input bg-input px-2 py-1.5 text-sm text-fg"
                                         value={metaAuthor}
                                         onChangeText={setMetaAuthor}
                                         placeholder="Author (optional)"
@@ -464,7 +462,7 @@ export default function BookDetail() {
                                         returnKeyType="next"
                                     />
                                     <TextInput
-                                        style={styles.metaInput}
+                                        className="rounded-md border border-border-input bg-input px-2 py-1.5 text-sm text-fg"
                                         value={metaYear}
                                         onChangeText={setMetaYear}
                                         placeholder="Year (optional)"
@@ -474,9 +472,9 @@ export default function BookDetail() {
                                         returnKeyType="done"
                                         onSubmitEditing={handleSaveMeta}
                                     />
-                                    <View style={styles.metaActions}>
-                                        <Pressable style={styles.metaSave} onPress={handleSaveMeta}>
-                                            <Text style={styles.metaSaveText}>Save</Text>
+                                    <View className="mt-0.5 flex-row items-center gap-3">
+                                        <Pressable className="rounded-md bg-accent px-3.5 py-1.5" onPress={handleSaveMeta}>
+                                            <Text className="text-[13px] font-semibold text-white">Save</Text>
                                         </Pressable>
                                         <Pressable onPress={() => {
                                             setMetaTitle(title ?? '');
@@ -484,30 +482,30 @@ export default function BookDetail() {
                                             setMetaYear(year ?? '');
                                             setEditingMeta(false);
                                         }}>
-                                            <Text style={styles.metaCancelText}>Cancel</Text>
+                                            <Text className="text-[13px] font-medium text-muted">Cancel</Text>
                                         </Pressable>
                                     </View>
                                 </React.Fragment>
                             ) : (
                                 <React.Fragment>
-                                    <Text style={styles.bookTitle} numberOfLines={3}>{metaTitle || title}</Text>
-                                    {(metaAuthor || author) ? <Text style={styles.bookAuthor}>{metaAuthor || author}</Text> : null}
-                                    {(metaYear || year) ? <Text style={styles.bookYear}>{metaYear || year}</Text> : null}
-                                    <Text style={styles.wordCount}>
+                                    <Text className="text-xl font-bold text-fg" numberOfLines={3}>{metaTitle || title}</Text>
+                                    {(metaAuthor || author) ? <Text className="text-base text-secondary">{metaAuthor || author}</Text> : null}
+                                    {(metaYear || year) ? <Text className="text-sm text-muted">{metaYear || year}</Text> : null}
+                                    <Text className="text-[13px] font-semibold text-accent">
                                         {words.length} {words.length === 1 ? 'word' : 'words'}
                                     </Text>
                                     {isCustomBook && (
-                                        <Pressable onPress={() => setEditingMeta(true)} hitSlop={8} style={styles.editMetaButton}>
-                                            <Text style={styles.editMetaText}>Edit details</Text>
+                                        <Pressable onPress={() => setEditingMeta(true)} hitSlop={8} className="mt-0.5 self-start">
+                                            <Text className="text-[13px] font-medium text-accent">Edit details</Text>
                                         </Pressable>
                                     )}
                                     {words.length > 0 && (
                                         <Pressable
                                             onPress={() => scrollRef.current?.scrollTo({ y: bookNotesY.current, animated: true })}
                                             hitSlop={8}
-                                            style={styles.jumpToNotesButton}
+                                            className="mt-2 self-start rounded-2xl border border-accent bg-card px-3 py-1.5"
                                         >
-                                            <Text style={styles.jumpToNotesText}>Jump to notes ↓</Text>
+                                            <Text className="text-xs font-semibold text-accent">Jump to notes ↓</Text>
                                         </Pressable>
                                     )}
                                 </React.Fragment>
@@ -515,22 +513,22 @@ export default function BookDetail() {
                         </View>
                     </View>
 
-                    <View style={styles.list}>
-                        <Text style={styles.sectionLabel}>Words</Text>
+                    <View className="gap-2.5 p-3">
+                        <Text className="ml-0.5 text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Words</Text>
                         {words.length === 0 ? (
-                            <Text style={styles.empty}>No words added yet. Add one above. It will be saved to your <Text style={styles.wordBankText}>word bank</Text> per book.</Text>
+                            <Text className="my-8 text-center text-[15px] text-muted">No words added yet. Add one above. It will be saved to your <Text className="italic text-muted">word bank</Text> per book.</Text>
                         ) : (
                             words.map((item) => {
                                 const isEditing = editingWord === item.word;
                                 return (
-                                    <View key={item.word} style={styles.card}>
-                                        <View style={styles.cardHeader}>
-                                            <Text style={styles.word}>{item.word}</Text>
+                                    <View key={item.word} className="gap-1 rounded-[10px] bg-card p-3.5">
+                                        <View className="flex-row items-center gap-2">
+                                            <Text className="text-[17px] font-bold text-fg">{item.word}</Text>
                                             {item.phonetic ? (
-                                                <Text style={styles.phonetic}>{item.phonetic}</Text>
+                                                <Text className="flex-1 text-[13px] text-muted" style={{ fontFamily: Fonts.mono }}>{item.phonetic}</Text>
                                             ) : null}
                                             <Pressable
-                                                style={styles.editButton}
+                                                className="ml-auto"
                                                 hitSlop={8}
                                                 onPress={() => {
                                                     if (isEditing) {
@@ -541,55 +539,49 @@ export default function BookDetail() {
                                                     }
                                                 }}
                                             >
-                                                <Text style={styles.editText}>{isEditing ? 'Cancel' : 'Edit'}</Text>
+                                                <Text className="text-[13px] font-medium text-accent">{isEditing ? 'Cancel' : 'Edit'}</Text>
                                             </Pressable>
                                             {!isEditing && (
-                                                <Pressable
-                                                    hitSlop={8}
-                                                    onPress={() => handleDeleteWord(item.word)}
-                                                >
-                                                    <Text style={styles.deleteText}>Remove</Text>
+                                                <Pressable hitSlop={8} onPress={() => handleDeleteWord(item.word)}>
+                                                    <Text className="text-[13px] font-medium text-error">Remove</Text>
                                                 </Pressable>
                                             )}
                                         </View>
 
-                                        <Text style={styles.partOfSpeech}>{item.partOfSpeech}</Text>
-                                        <Text style={styles.definition}>{item.definition}</Text>
+                                        <Text className="text-xs italic capitalize text-accent">{item.partOfSpeech}</Text>
+                                        <Text className="text-sm leading-5 text-body">{item.definition}</Text>
 
                                         {item.definitions && item.definitions.length > 1 ? (
-                                            <Pressable
-                                                hitSlop={8}
-                                                style={styles.chooseDefinitionButton}
-                                                onPress={() => setDefinitionPickerWord(item.word)}
-                                            >
-                                                <Text style={styles.chooseDefinitionText}>
+                                            <Pressable hitSlop={8} className="mt-1 self-start" onPress={() => setDefinitionPickerWord(item.word)}>
+                                                <Text className="text-[13px] font-medium text-accent">
                                                     Choose other definition ({item.definitions.length}) ›
                                                 </Text>
                                             </Pressable>
                                         ) : null}
 
                                         {!isEditing && item.sentence ? (
-                                            <View style={styles.metaBlock}>
-                                                <Text style={styles.metaLabel}>Sentence</Text>
-                                                <Text style={styles.metaValue}>{item.sentence}</Text>
+                                            <View className="mt-1.5 gap-0.5">
+                                                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Sentence</Text>
+                                                <Text className="text-sm leading-5 text-meta">{item.sentence}</Text>
                                             </View>
                                         ) : null}
 
                                         {!isEditing && item.notes ? (
-                                            <View style={styles.metaBlock}>
-                                                <Text style={styles.metaLabel}>Notes</Text>
-                                                <Text style={styles.metaValue}>{item.notes}</Text>
+                                            <View className="mt-1.5 gap-0.5">
+                                                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Notes</Text>
+                                                <Text className="text-sm leading-5 text-meta">{item.notes}</Text>
                                             </View>
                                         ) : null}
 
                                         {isEditing ? (
-                                            <View style={styles.editForm}>
-                                                <View style={styles.labelRow}>
-                                                    <Text style={styles.metaLabel}>Sentence</Text>
-                                                    <Text style={styles.charCount}>{draft.sentence.length}</Text>
+                                            <View className="mt-2.5 gap-1.5 border-t border-border-edit pt-2.5">
+                                                <View className="flex-row items-center justify-between">
+                                                    <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Sentence</Text>
+                                                    <Text className="text-[11px] text-faded">{draft.sentence.length}</Text>
                                                 </View>
                                                 <TextInput
-                                                    style={styles.editInput}
+                                                    className="min-h-16 rounded-lg border border-border-input bg-input p-2.5 text-sm text-fg"
+                                                    style={{ textAlignVertical: 'top' }}
                                                     placeholder={item.exampleSentence ?? `e.g. 'I encountered "${item.word}" while reading...'`}
                                                     placeholderTextColor={placeholderColor}
                                                     value={draft.sentence}
@@ -604,10 +596,11 @@ export default function BookDetail() {
                                                         setTimeout(() => notesRef.current?.focus(), 100);
                                                     }}
                                                 />
-                                                <Text style={styles.metaLabel}>Notes</Text>
+                                                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Notes</Text>
                                                 <TextInput
                                                     ref={notesRef}
-                                                    style={styles.editInput}
+                                                    className="min-h-16 rounded-lg border border-border-input bg-input p-2.5 text-sm text-fg"
+                                                    style={{ textAlignVertical: 'top' }}
                                                     placeholder="e.g. Similar to 'optimistic', used in formal writing"
                                                     placeholderTextColor={placeholderColor}
                                                     value={draft.notes}
@@ -618,10 +611,10 @@ export default function BookDetail() {
                                                     onSubmitEditing={Keyboard.dismiss}
                                                 />
                                                 <Pressable
-                                                    style={styles.saveButton}
+                                                    className="mt-1 items-center rounded-lg bg-accent py-2.5"
                                                     onPress={() => { Keyboard.dismiss(); handleSaveEdit(item.word); }}
                                                 >
-                                                    <Text style={styles.saveButtonText}>Save</Text>
+                                                    <Text className="text-[15px] font-semibold text-white">Save</Text>
                                                 </Pressable>
                                             </View>
                                         ) : null}
@@ -632,15 +625,15 @@ export default function BookDetail() {
                     </View>
 
                     <View
-                        style={styles.bookNotesSection}
+                        className="gap-2.5 p-3"
                         onLayout={(e) => { bookNotesY.current = e.nativeEvent.layout.y; }}
                     >
-                        <Text style={styles.sectionLabel}>Notes</Text>
-                        <View style={styles.card}>
-                            <View style={styles.labelRow}>
-                                <Text style={styles.metaLabel}>Book Notes</Text>
+                        <Text className="ml-0.5 text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Notes</Text>
+                        <View className="gap-1 rounded-[10px] bg-card p-3.5">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Book Notes</Text>
                                 <Pressable
-                                    style={styles.editButton}
+                                    className="ml-auto"
                                     hitSlop={8}
                                     onPress={() => {
                                         if (editingBookNotes) {
@@ -651,44 +644,44 @@ export default function BookDetail() {
                                         }
                                     }}
                                 >
-                                    <Text style={styles.editText}>{editingBookNotes ? 'Cancel' : 'Edit'}</Text>
+                                    <Text className="text-[13px] font-medium text-accent">{editingBookNotes ? 'Cancel' : 'Edit'}</Text>
                                 </Pressable>
                             </View>
                             {editingBookNotes ? (
                                 <React.Fragment>
                                     <TextInput
-                                        style={styles.editInput}
+                                        className="min-h-16 rounded-lg border border-border-input bg-input p-2.5 text-sm text-fg"
+                                        style={{ textAlignVertical: 'top' }}
                                         placeholder="General notes about this book…"
                                         placeholderTextColor={placeholderColor}
                                         value={bookNotesDraft}
                                         onChangeText={setBookNotesDraft}
                                         multiline
                                         autoCorrect
-                                        textAlignVertical="top"
                                     />
                                     <Pressable
-                                        style={styles.saveButton}
+                                        className="mt-1 items-center rounded-lg bg-accent py-2.5"
                                         onPress={handleSaveBookNotes}
                                     >
-                                        <Text style={styles.saveButtonText}>Save</Text>
+                                        <Text className="text-[15px] font-semibold text-white">Save</Text>
                                     </Pressable>
                                 </React.Fragment>
                             ) : bookNotes ? (
                                 <Pressable onPress={() => { setBookNotesDraft(bookNotes); setEditingBookNotes(true); }}>
-                                    <Text style={styles.metaValue}>{bookNotes}</Text>
+                                    <Text className="text-sm leading-5 text-meta">{bookNotes}</Text>
                                 </Pressable>
                             ) : (
                                 <Pressable onPress={() => { setBookNotesDraft(''); setEditingBookNotes(true); }}>
-                                    <Text style={styles.bookNotesPlaceholder}>Add book notes…</Text>
+                                    <Text className="text-sm text-muted">Add book notes…</Text>
                                 </Pressable>
                             )}
                         </View>
 
-                        <View style={styles.card}>
-                            <View style={styles.labelRow}>
-                                <Text style={styles.metaLabel}>My Review</Text>
+                        <View className="gap-1 rounded-[10px] bg-card p-3.5">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">My Review</Text>
                                 <Pressable
-                                    style={styles.editButton}
+                                    className="ml-auto"
                                     hitSlop={8}
                                     onPress={() => {
                                         if (editingReview) {
@@ -699,36 +692,36 @@ export default function BookDetail() {
                                         }
                                     }}
                                 >
-                                    <Text style={styles.editText}>{editingReview ? 'Cancel' : 'Edit'}</Text>
+                                    <Text className="text-[13px] font-medium text-accent">{editingReview ? 'Cancel' : 'Edit'}</Text>
                                 </Pressable>
                             </View>
                             {editingReview ? (
                                 <React.Fragment>
                                     <TextInput
                                         ref={reviewInputRef}
-                                        style={styles.editInput}
+                                        className="min-h-16 rounded-lg border border-border-input bg-input p-2.5 text-sm text-fg"
+                                        style={{ textAlignVertical: 'top' }}
                                         placeholder="What did you think of this book?"
                                         placeholderTextColor={placeholderColor}
                                         value={reviewDraft}
                                         onChangeText={setReviewDraft}
                                         multiline
                                         autoCorrect
-                                        textAlignVertical="top"
                                     />
                                     <Pressable
-                                        style={styles.saveButton}
+                                        className="mt-1 items-center rounded-lg bg-accent py-2.5"
                                         onPress={handleSaveReview}
                                     >
-                                        <Text style={styles.saveButtonText}>Save</Text>
+                                        <Text className="text-[15px] font-semibold text-white">Save</Text>
                                     </Pressable>
                                 </React.Fragment>
                             ) : review ? (
                                 <Pressable onPress={() => { setReviewDraft(review); setEditingReview(true); }}>
-                                    <Text style={styles.metaValue}>{review}</Text>
+                                    <Text className="text-sm leading-5 text-meta">{review}</Text>
                                 </Pressable>
                             ) : (
                                 <Pressable onPress={() => { setReviewDraft(''); setEditingReview(true); }}>
-                                    <Text style={styles.bookNotesPlaceholder}>Add a review of the book…</Text>
+                                    <Text className="text-sm text-muted">Add a review of the book…</Text>
                                 </Pressable>
                             )}
                         </View>
@@ -736,11 +729,11 @@ export default function BookDetail() {
                 </KeyboardAwareScrollView>
 
                 {!editingWord && (
-                    // It always goes above the native keyboard on the devices using insets
-                    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
+                    // paddingBottom comes from the safe-area inset so the footer clears the OS bar.
+                    <View className="gap-3 border-t border-border bg-background px-4 pt-3" style={{ paddingBottom: Math.max(insets.bottom, 12) + 12 }}>
                         <ReadStatusSelector value={readStatus} onChange={handleChangeReadStatus} />
-                        <Pressable style={styles.saveButton} onPress={saveToReadList}>
-                            <Text style={styles.saveButtonText}>
+                        <Pressable className="mt-1 items-center rounded-lg bg-accent py-2.5" onPress={saveToReadList}>
+                            <Text className="text-[15px] font-semibold text-white">
                                 {inReadList ? 'Update read list' : 'Save to read list'}
                             </Text>
                         </Pressable>
@@ -763,304 +756,3 @@ export default function BookDetail() {
         </React.Fragment>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        scrollContent: {
-            paddingBottom: 24,
-        },
-        header: {
-            flexDirection: "row",
-            gap: 14,
-            padding: 16,
-            alignItems: "center",
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-        },
-        // paddingBottom is set inline from the device's safe-area inset so the footer
-        // clears the iOS home indicator / Android gesture bar.
-        footer: {
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: C.border,
-            backgroundColor: C.background,
-        },
-        cover: {
-            width: 120,
-            height: 160,
-            borderRadius: 8,
-        },
-        headerInfo: {
-            flex: 1,
-            justifyContent: "center",
-            gap: 6,
-        },
-        bookTitle: {
-            fontSize: 20,
-            fontWeight: "700",
-            color: C.text,
-        },
-        bookAuthor: {
-            fontSize: 16,
-            color: C.textSecondary,
-        },
-        bookYear: {
-            fontSize: 14,
-            color: C.textMuted,
-        },
-        wordCount: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: ACCENT,
-        },
-        wordBankText: {
-            fontStyle: "italic",
-            color: C.textMuted,
-        },
-        editMetaButton: {
-            alignSelf: 'flex-start',
-            marginTop: 2,
-        },
-        editMetaText: {
-            fontSize: 13,
-            color: ACCENT,
-            fontWeight: '500',
-        },
-        jumpToNotesButton: {
-            alignSelf: 'flex-start',
-            marginTop: 8,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: ACCENT,
-            backgroundColor: C.backgroundCard,
-        },
-        jumpToNotesText: {
-            fontSize: 12,
-            color: ACCENT,
-            fontWeight: '600',
-        },
-        metaInput: {
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            borderRadius: 6,
-            paddingHorizontal: 8,
-            paddingVertical: 6,
-            fontSize: 14,
-            color: C.text,
-            backgroundColor: C.backgroundInput,
-        },
-        metaActions: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            marginTop: 2,
-        },
-        metaSave: {
-            backgroundColor: ACCENT,
-            borderRadius: 6,
-            paddingHorizontal: 14,
-            paddingVertical: 6,
-        },
-        metaSaveText: {
-            color: '#fff',
-            fontSize: 13,
-            fontWeight: '600',
-        },
-        metaCancelText: {
-            fontSize: 13,
-            color: C.textMuted,
-            fontWeight: '500',
-        },
-        addRow: {
-            flexDirection: "row",
-            gap: 8,
-            padding: 12,
-            paddingBottom: 4,
-        },
-        inputContainer: {
-            flex: 1,
-        },
-        input: {
-            height: 44,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            paddingHorizontal: 12,
-            paddingVertical: 0,
-            fontSize: 16,
-            color: C.text,
-            backgroundColor: C.backgroundInput,
-            textAlignVertical: 'center',
-            includeFontPadding: false,
-        },
-        addButton: {
-            backgroundColor: ACCENT,
-            borderRadius: 8,
-            paddingHorizontal: 16,
-            justifyContent: "center",
-            minWidth: 56,
-            alignItems: "center",
-        },
-        addButtonDisabled: {
-            opacity: 0.6,
-        },
-        addButtonText: {
-            color: "#fff",
-            fontWeight: "600",
-            fontSize: 16,
-        },
-        error: {
-            color: ERROR,
-            fontSize: 13,
-            paddingHorizontal: 12,
-            paddingBottom: 4,
-        },
-        bookNotesSection: {
-            padding: 12,
-            gap: 10,
-        },
-        bookNotesPlaceholder: {
-            fontSize: 14,
-            color: C.textMuted,
-        },
-        list: {
-            padding: 12,
-            gap: 10,
-        },
-        sectionLabel: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: C.textMuted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginLeft: 2,
-        },
-        empty: {
-            marginVertical: 32,
-            textAlign: "center",
-            fontSize: 15,
-            color: C.textMuted,
-        },
-        card: {
-            backgroundColor: C.backgroundCard,
-            borderRadius: 10,
-            padding: 14,
-            gap: 4,
-        },
-        cardHeader: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-        },
-        word: {
-            fontSize: 17,
-            fontWeight: "700",
-            color: C.text,
-        },
-        phonetic: {
-            fontSize: 13,
-            color: C.textMuted,
-            fontFamily: Fonts.mono,
-            flex: 1,
-        },
-        editButton: {
-            marginLeft: 'auto',
-        },
-        editText: {
-            fontSize: 13,
-            color: ACCENT,
-            fontWeight: '500',
-        },
-        deleteText: {
-            fontSize: 13,
-            color: ERROR,
-            fontWeight: '500',
-        },
-        partOfSpeech: {
-            fontSize: 12,
-            fontStyle: "italic",
-            color: ACCENT,
-            textTransform: "capitalize",
-        },
-        definition: {
-            fontSize: 14,
-            color: C.textBody,
-            lineHeight: 20,
-        },
-        chooseDefinitionButton: {
-            alignSelf: 'flex-start',
-            marginTop: 4,
-        },
-        chooseDefinitionText: {
-            fontSize: 13,
-            color: ACCENT,
-            fontWeight: '500',
-        },
-        metaBlock: {
-            marginTop: 6,
-            gap: 2,
-        },
-        metaLabel: {
-            fontSize: 11,
-            fontWeight: '600',
-            color: C.textMuted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-        },
-        metaValue: {
-            fontSize: 14,
-            color: C.textMeta,
-            lineHeight: 20,
-        },
-        editForm: {
-            marginTop: 10,
-            gap: 6,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: C.borderEdit,
-            paddingTop: 10,
-        },
-        labelRow: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-        },
-        charCount: {
-            fontSize: 11,
-            color: C.textFaded,
-        },
-        editInput: {
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            borderRadius: 8,
-            padding: 10,
-            fontSize: 14,
-            color: C.text,
-            backgroundColor: C.backgroundInput,
-            minHeight: 64,
-            textAlignVertical: 'top',
-        },
-        saveButton: {
-            backgroundColor: ACCENT,
-            borderRadius: 8,
-            paddingVertical: 10,
-            alignItems: 'center',
-            marginTop: 4,
-        },
-        saveButtonText: {
-            color: '#fff',
-            fontWeight: '600',
-            fontSize: 15,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

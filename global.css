@@ -3,3 +3,44 @@
 @import "tailwindcss/utilities.css";
 
 @import "nativewind/theme";
+
+/* Semantic color tokens ported from src/styles/global.ts (Colors).
+   Light values here; the dark block below redefines the CSS vars so utilities
+   like bg-background / text-fg flip when the color scheme is dark. */
+@theme {
+    --color-accent: #0a7ea4;
+    --color-error: #e05252;
+    --color-background: #ffffff;
+    --color-card: #f5f8fa;
+    --color-input: #f9f9f9;
+    --color-fg: #11181c;
+    --color-secondary: #555555;
+    --color-muted: #888888;
+    --color-body: #333333;
+    --color-meta: #444444;
+    --color-faded: #aaaaaa;
+    --color-border: #e0e0e0;
+    --color-border-input: #cccccc;
+    --color-border-edit: #ddddee;
+    --color-cover-placeholder: #dddddd;
+    --color-remove-icon: #aaaaaa;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-background: #151718;
+        --color-card: #1e2426;
+        --color-input: #252b2d;
+        --color-fg: #ecedee;
+        --color-secondary: #9ba1a6;
+        --color-muted: #687076;
+        --color-body: #c0c8cc;
+        --color-meta: #9ba1a6;
+        --color-faded: #555555;
+        --color-border: #2d3438;
+        --color-border-input: #3d4245;
+        --color-border-edit: #2d3438;
+        --color-cover-placeholder: #2d3438;
+        --color-remove-icon: #555555;
+    }
+}

@@ -1,9 +1,8 @@
 import { useScrollContext } from "@/context/scroll-context";
-import { ACCENT } from "@/styles/global";
 import { showActionSheet, type ActionSheetButton } from "@/utils/show-action-sheet";
 import { router, usePathname } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text } from "react-native";
+import { Animated, Pressable, Text } from "react-native";
 
 const SCROLL_THRESHOLD = 20;
 const TAB_BAR_HEIGHT = 105;
@@ -57,39 +56,17 @@ export default function FloatingActionButton() {
     }
 
     return (
-        <Animated.View style={[styles.button, { opacity, bottom: TAB_BAR_HEIGHT + 16 }]}>
-            <Pressable style={styles.pressable} onPress={handlePress} hitSlop={8}>
-                <Text style={styles.icon}>{showScrollTop ? '↑' : '+'}</Text>
+        // Animated opacity + computed bottom stay inline; FAB sits 16dp above the tab bar.
+        <Animated.View style={{ position: 'absolute', right: 16, zIndex: 100, opacity, bottom: TAB_BAR_HEIGHT + 16 }}>
+            <Pressable
+                className="h-14 w-14 items-center justify-center rounded-full bg-accent"
+                // Native shadow/elevation kept inline (not expressible as classes reliably).
+                style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 6 }}
+                onPress={handlePress}
+                hitSlop={8}
+            >
+                <Text className="text-2xl font-bold leading-7 text-white">{showScrollTop ? '↑' : '+'}</Text>
             </Pressable>
         </Animated.View>
     );
 }
-
-const styles = StyleSheet.create({
-    // Material Design: FAB sits 16dp from the screen edges (here, 16dp above the bottom tab bar).
-    button: {
-        position: 'absolute',
-        right: 16,
-        zIndex: 100,
-    },
-    // Material Design standard FAB: 56dp diameter, 6dp resting elevation, 24dp icon.
-    pressable: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: ACCENT,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        elevation: 6,
-    },
-    icon: {
-        color: '#fff',
-        fontSize: 24,
-        fontWeight: '700',
-        lineHeight: 28,
-    },
-});

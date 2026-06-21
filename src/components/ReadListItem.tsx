@@ -1,14 +1,24 @@
-import { useThemedStyles } from "@/hooks/use-themed-styles";
-
-import type { ReadListBook } from "@/models/read-list-book";
+import type { ReadListBook, ReadStatus } from "@/models/read-list-book";
 import { READ_STATUS_LABELS } from "@/models/read-list-book";
 
-import { ACCENT, Colors, Fonts } from "@/styles/global";
+import { Fonts } from "@/styles/global";
 import { coverUri } from "@/utils/cover-uri";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import CoverImage from "@/components/CoverImage";
 import CoverPlaceholder from "@/components/CoverPlaceholder";
+
+// Per-status badge styling (border/fill) and label color.
+const STATUS_BADGE: Record<ReadStatus, string> = {
+    want: 'border-border',
+    currently_reading: 'border-accent',
+    read: 'border-accent bg-accent',
+};
+const STATUS_TEXT: Record<ReadStatus, string> = {
+    want: 'text-muted',
+    currently_reading: 'text-accent',
+    read: 'text-white',
+};
 
 type ReadListItemProps = {
     item: ReadListBook;
@@ -19,143 +29,42 @@ type ReadListItemProps = {
 };
 
 export default function ReadListItem({ item, wordCount, onPress, onRemove, onChangeStatus }: ReadListItemProps) {
-    const styles = useThemedStyles(lightStyles, darkStyles);
-
     const cover = coverUri(item.cover_i, 'S');
 
     return (
-        <View style={styles.row}>
-            <Pressable style={styles.rowContent} onPress={onPress}>
-                <CoverImage uri={cover} style={styles.cover} placeholder={<CoverPlaceholder size={20} />} />
-                <View style={styles.info}>
-                    <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+        <View className="flex-row items-center border-b border-border">
+            <Pressable className="flex-1 flex-row items-center gap-3 py-3" onPress={onPress}>
+                <CoverImage uri={cover} className="h-16 w-12 rounded" placeholder={<CoverPlaceholder size={20} />} />
+                <View className="flex-1 gap-0.5">
+                    <Text className="text-[15px] font-semibold text-fg" style={{ fontFamily: Fonts.serif }} numberOfLines={2}>{item.title}</Text>
                     {item.author ? (
-                        <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
+                        <Text className="text-[13px] text-secondary" numberOfLines={1}>{item.author}</Text>
                     ) : null}
                     {item.year ? (
-                        <Text style={styles.year}>{item.year}</Text>
+                        <Text className="text-xs text-muted">{item.year}</Text>
                     ) : null}
                     <Pressable
                         onPress={onChangeStatus}
                         hitSlop={6}
-                        style={[styles.statusBadge, styles[`status_${item.status}`]]}
+                        className={`mt-1 self-start rounded border px-1.75 py-0.5 ${STATUS_BADGE[item.status]}`}
                         accessibilityRole="button"
                         accessibilityLabel={`Status: ${READ_STATUS_LABELS[item.status]}. Tap to change.`}
                     >
-                        <Text style={[styles.statusText, styles[`statusText_${item.status}`]]}>
+                        <Text className={`text-[11px] font-semibold ${STATUS_TEXT[item.status]}`}>
                             {READ_STATUS_LABELS[item.status]}
                         </Text>
                     </Pressable>
                 </View>
-                <View style={styles.badge}>
-                    <Text style={styles.badgeCount}>{wordCount}</Text>
-                    <Text style={styles.badgeLabel}>
+                <View className="min-w-11 items-center">
+                    <Text className="text-xl font-bold text-accent">{wordCount}</Text>
+                    <Text className="text-[11px] text-muted">
                         {wordCount === 1 ? 'word' : 'words'}
                     </Text>
                 </View>
             </Pressable>
-            <Pressable onPress={onRemove} style={styles.removeButton} hitSlop={8}>
-                <Text style={styles.removeText}>✕</Text>
+            <Pressable onPress={onRemove} className="p-3" hitSlop={8}>
+                <Text className="text-base text-remove-icon">✕</Text>
             </Pressable>
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-        },
-        rowContent: {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            paddingVertical: 12,
-        },
-        cover: {
-            width: 48,
-            height: 64,
-            borderRadius: 4,
-        },
-        info: {
-            flex: 1,
-            gap: 3,
-        },
-        title: {
-            fontSize: 15,
-            fontWeight: '600',
-            color: C.text,
-            fontFamily: Fonts.serif,
-        },
-        author: {
-            fontSize: 13,
-            color: C.textSecondary,
-        },
-        year: {
-            fontSize: 12,
-            color: C.textMuted,
-        },
-        statusBadge: {
-            alignSelf: 'flex-start',
-            borderWidth: 1,
-            borderRadius: 4,
-            paddingHorizontal: 7,
-            paddingVertical: 2,
-            marginTop: 4,
-        },
-        statusText: {
-            fontSize: 11,
-            fontWeight: '600',
-        },
-        // "Want to read" — neutral/muted
-        status_want: {
-            borderColor: C.border,
-        },
-        statusText_want: {
-            color: C.textMuted,
-        },
-        // "Currently reading" — accent
-        status_currently_reading: {
-            borderColor: ACCENT,
-        },
-        statusText_currently_reading: {
-            color: ACCENT,
-        },
-        // "Read" — filled accent
-        status_read: {
-            borderColor: ACCENT,
-            backgroundColor: ACCENT,
-        },
-        statusText_read: {
-            color: '#fff',
-        },
-        badge: {
-            alignItems: 'center',
-            minWidth: 44,
-        },
-        badgeCount: {
-            fontSize: 20,
-            fontWeight: '700',
-            color: ACCENT,
-        },
-        badgeLabel: {
-            fontSize: 11,
-            color: C.textMuted,
-        },
-        removeButton: {
-            paddingHorizontal: 12,
-            paddingVertical: 12,
-        },
-        removeText: {
-            fontSize: 16,
-            color: C.removeIcon,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

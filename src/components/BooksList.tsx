@@ -1,11 +1,10 @@
 import React from "react";
 
-import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useFlatListScroll } from "@/hooks/use-scroll-registration";
 
-import { ACCENT, Colors } from "@/styles/global";
+import { ACCENT } from "@/styles/global";
 
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import Reanimated from "react-native-reanimated";
 
 import { usePulse } from "@/hooks/use-pulse";
@@ -19,18 +18,21 @@ import BookItem from "./BookItem";
 const SKELETON_TITLE_WIDTHS = ['72%', '58%', '80%', '65%', '75%', '50%', '68%', '78%'] as const;
 const SKELETON_AUTHOR_WIDTHS = ['45%', '38%', '52%', '42%', '48%', '35%', '44%', '50%'] as const;
 
-function BookSkeletons({ styles }: { styles: ReturnType<typeof buildStyles> }) {
+function BookSkeletons() {
     const animStyle = usePulse();
 
     return (
         <React.Fragment>
             {SKELETON_TITLE_WIDTHS.map((titleW, i) => (
-                <Reanimated.View key={i} style={[styles.bookRow, animStyle]}>
-                    <View style={[styles.cover, styles.skeletonBox]} />
-                    <View style={styles.bookInfo}>
-                        <View style={[styles.skeletonBox, styles.skeletonLine, { width: titleW, height: 14 }]} />
-                        <View style={[styles.skeletonBox, styles.skeletonLine, { width: SKELETON_AUTHOR_WIDTHS[i], height: 12 }]} />
-                        <View style={[styles.skeletonBox, styles.skeletonLine, { width: '22%', height: 11 }]} />
+                // Reanimated view carries only the pulsing opacity; layout/colors are classes.
+                <Reanimated.View key={i} style={animStyle}>
+                    <View className="flex-row gap-3 border-b border-border py-2.5">
+                        <View className="h-16 w-12 rounded bg-cover-placeholder" />
+                        <View className="flex-1 justify-center gap-1">
+                            <View className="rounded bg-cover-placeholder" style={{ width: titleW, height: 14 }} />
+                            <View className="rounded bg-cover-placeholder" style={{ width: SKELETON_AUTHOR_WIDTHS[i], height: 12 }} />
+                            <View className="rounded bg-cover-placeholder" style={{ width: '22%', height: 11 }} />
+                        </View>
                     </View>
                 </Reanimated.View>
             ))}
@@ -62,14 +64,13 @@ export default function BooksList({
     header,
     listEmptyComponent,
 }: BooksListProps) {
-    const styles = useThemedStyles(lightStyles, darkStyles);
     const { ref: flatListRef, onScroll, scrollEventThrottle } = useFlatListScroll();
 
     return (
-        <View style={styles.container}>
+        <View className="flex-1">
             <FlatList
                 ref={flatListRef}
-                style={styles.list}
+                className="flex-1 bg-background px-3"
                 keyboardShouldPersistTaps="handled"
                 data={books}
                 keyExtractor={(item) => item.key}
@@ -81,9 +82,9 @@ export default function BooksList({
                 onScroll={onScroll}
                 ListEmptyComponent={
                     loading ? (
-                        <BookSkeletons styles={styles} />
+                        <BookSkeletons />
                     ) : searched && books.length === 0 ? (
-                        <Link href="/custom-book" style={styles.emptySubtitle}>
+                        <Link href="/custom-book" className="text-center text-sm text-accent">
                             Book not found. Add it?
                         </Link>
                     ) : (
@@ -92,12 +93,12 @@ export default function BooksList({
                 }
                 ListFooterComponent={
                     loadingMore ? (
-                        <ActivityIndicator style={styles.footerLoader} color={ACCENT} />
+                        <ActivityIndicator className="py-4" color={ACCENT} />
                     ) : loadMoreError ? (
-                        <View style={styles.retryContainer}>
-                            <Text style={styles.retryText}>Failed to load more results.</Text>
-                            <Pressable style={styles.retryButton} onPress={onRetryLoadMore}>
-                                <Text style={styles.retryButtonText}>Retry</Text>
+                        <View className="items-center gap-2 py-4">
+                            <Text className="text-[13px] text-muted">Failed to load more results.</Text>
+                            <Pressable className="rounded-md bg-accent px-5 py-2" onPress={onRetryLoadMore}>
+                                <Text className="text-sm font-semibold text-white">Retry</Text>
                             </Pressable>
                         </View>
                     ) : null
@@ -106,78 +107,3 @@ export default function BooksList({
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-        },
-        list: {
-            flex: 1,
-            backgroundColor: C.background,
-            paddingHorizontal: 12,
-        },
-        bookRow: {
-            flexDirection: 'row',
-            gap: 12,
-            paddingVertical: 10,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-        },
-        cover: {
-            width: 48,
-            height: 64,
-            borderRadius: 4,
-        },
-        bookInfo: {
-            flex: 1,
-            justifyContent: 'center',
-            gap: 4,
-        },
-        skeletonBox: {
-            backgroundColor: C.coverPlaceholder,
-            borderRadius: 4,
-        },
-        skeletonLine: {
-            borderRadius: 4,
-        },
-        empty: {
-            marginTop: 24,
-            textAlign: 'center',
-            color: C.textMuted,
-            fontSize: 15,
-        },
-        emptySubtitle: {
-            fontSize: 14,
-            color: ACCENT,
-            textAlign: 'center',
-            lineHeight: 21,
-        },
-        footerLoader: {
-            paddingVertical: 16,
-        },
-        retryContainer: {
-            paddingVertical: 16,
-            alignItems: 'center',
-            gap: 8,
-        },
-        retryText: {
-            fontSize: 13,
-            color: C.textMuted,
-        },
-        retryButton: {
-            backgroundColor: ACCENT,
-            borderRadius: 6,
-            paddingHorizontal: 20,
-            paddingVertical: 8,
-        },
-        retryButtonText: {
-            color: '#fff',
-            fontWeight: '600',
-            fontSize: 14,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

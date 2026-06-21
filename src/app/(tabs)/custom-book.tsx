@@ -5,14 +5,14 @@ import ReadStatusSelector from '@/components/ReadStatusSelector';
 import { useColorScheme } from '@/context/theme-context';
 import type { ReadStatus } from '@/models/read-list-book';
 import { upsertReadListBook } from '@/storage/read-list-storage';
-import { ACCENT, Colors, ERROR } from '@/styles/global';
+import { Colors } from '@/styles/global';
 import { openBook } from '@/utils/open-book';
 import { pickCoverImage } from '@/utils/pick-cover-image';
 import { useTypewriterPlaceholder } from '@/hooks/use-typewriter-placeholder';
 import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-controller';
 
 // Extend with AI suggestions later
@@ -30,11 +30,8 @@ const RANDOM_TITLES = [
 ];
 
 export default function CustomBookScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
-    const placeholderColor = scheme === 'dark'
-        ? Colors.dark.textPlaceholder
-        : Colors.light.textPlaceholder;
+    // placeholderTextColor needs a color value (not a class), so keep it themed here.
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const [title, setTitle] = useState<string>('');
     const [author, setAuthor] = useState<string>('');
@@ -87,157 +84,79 @@ export default function CustomBookScreen() {
 
     return (
         <React.Fragment>
-            <KeyboardAwareScrollView
-                style={styles.container}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                bottomOffset={80}
-            >
-                <View style={styles.coverRow}>
-                    <CoverImage
-                        uri={coverUri}
-                        style={styles.cover}
-                        placeholder={<CoverPlaceholder size={32} />}
-                    />
-                    <Pressable style={styles.pickButton} onPress={handlePickImage}>
-                        <Text style={styles.pickButtonText}>
-                            {coverUri ? 'Change image' : 'Pick cover image'}
-                        </Text>
+            {/* KeyboardAwareScrollView is third-party (no className) — wrap it for the bg. */}
+            <View className="flex-1 bg-background">
+                <KeyboardAwareScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ padding: 16, gap: 16 }}
+                    keyboardShouldPersistTaps="handled"
+                    bottomOffset={80}
+                >
+                    <View className="flex-row items-center gap-4">
+                        <CoverImage
+                            uri={coverUri}
+                            className="h-32 w-24 rounded-lg"
+                            radius={8}
+                            placeholder={<CoverPlaceholder size={32} />}
+                        />
+                        <Pressable className="rounded-lg border border-accent px-4 py-2" onPress={handlePickImage}>
+                            <Text className="text-sm font-medium text-accent">
+                                {coverUri ? 'Change image' : 'Pick cover image'}
+                            </Text>
+                        </Pressable>
+                    </View>
+
+                    <View className="gap-1.5">
+                        <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Title</Text>
+                        <ClearableTextInput
+                            className={`h-12 rounded-lg border bg-input px-3.5 text-base text-fg ${titleError ? "border-error" : "border-border-input"}`}
+                            placeholder={typedPlaceholder || "Enter book title"}
+                            placeholderTextColor={placeholderColor}
+                            value={title}
+                            onChangeText={(t) => { setTitle(t); setTitleError(''); }}
+                            returnKeyType="next"
+                        />
+                        {titleError ? <Text className="text-[13px] text-error">{titleError}</Text> : null}
+                    </View>
+
+                    <View className="gap-1.5">
+                        <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Author <Text className="text-xs font-normal normal-case text-muted">(optional)</Text></Text>
+                        <ClearableTextInput
+                            className="h-12 rounded-lg border border-border-input bg-input px-3.5 text-base text-fg"
+                            placeholder="e.g. Jane Austen"
+                            placeholderTextColor={placeholderColor}
+                            value={author}
+                            onChangeText={setAuthor}
+                            returnKeyType="next"
+                        />
+                    </View>
+
+                    <View className="gap-1.5">
+                        <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Year <Text className="text-xs font-normal normal-case text-muted">(optional)</Text></Text>
+                        <ClearableTextInput
+                            className="h-12 rounded-lg border border-border-input bg-input px-3.5 text-base text-fg"
+                            placeholder="e.g. 1813"
+                            placeholderTextColor={placeholderColor}
+                            value={year}
+                            onChangeText={setYear}
+                            keyboardType="number-pad"
+                            maxLength={4}
+                            returnKeyType="done"
+                            onSubmitEditing={handleCreate}
+                        />
+                    </View>
+
+                    <View className="gap-1.5">
+                        <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Reading status</Text>
+                        <ReadStatusSelector value={readStatus} onChange={setReadStatus} />
+                    </View>
+
+                    <Pressable className="items-center rounded-[10px] bg-accent py-3.5" onPress={handleCreate}>
+                        <Text className="text-base font-bold text-white">Create Book</Text>
                     </Pressable>
-                </View>
-
-                <View style={styles.field}>
-                    <Text style={styles.label}>Title</Text>
-                    <ClearableTextInput
-                        style={[styles.input, titleError ? styles.inputError : null]}
-                        placeholder={typedPlaceholder || "Enter book title"}
-                        placeholderTextColor={placeholderColor}
-                        value={title}
-                        onChangeText={(t) => { setTitle(t); setTitleError(''); }}
-                        returnKeyType="next"
-                    />
-                    {titleError ? <Text style={styles.error}>{titleError}</Text> : null}
-                </View>
-
-                <View style={styles.field}>
-                    <Text style={styles.label}>Author <Text style={styles.optional}>(optional)</Text></Text>
-                    <ClearableTextInput
-                        style={styles.input}
-                        placeholder="e.g. Jane Austen"
-                        placeholderTextColor={placeholderColor}
-                        value={author}
-                        onChangeText={setAuthor}
-                        returnKeyType="next"
-                    />
-                </View>
-
-                <View style={styles.field}>
-                    <Text style={styles.label}>Year <Text style={styles.optional}>(optional)</Text></Text>
-                    <ClearableTextInput
-                        style={styles.input}
-                        placeholder="e.g. 1813"
-                        placeholderTextColor={placeholderColor}
-                        value={year}
-                        onChangeText={setYear}
-                        keyboardType="number-pad"
-                        maxLength={4}
-                        returnKeyType="done"
-                        onSubmitEditing={handleCreate}
-                    />
-                </View>
-
-                <View style={styles.field}>
-                    <Text style={styles.label}>Reading status</Text>
-                    <ReadStatusSelector value={readStatus} onChange={setReadStatus} />
-                </View>
-
-                <Pressable style={styles.createButton} onPress={handleCreate}>
-                    <Text style={styles.createButtonText}>Create Book</Text>
-                </Pressable>
-            </KeyboardAwareScrollView>
+                </KeyboardAwareScrollView>
+            </View>
             <KeyboardToolbar />
         </React.Fragment>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        scrollContent: {
-            padding: 16,
-            gap: 16,
-        },
-        coverRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 16,
-        },
-        cover: {
-            width: 96,
-            height: 128,
-            borderRadius: 8,
-        },
-        pickButton: {
-            paddingVertical: 8,
-            paddingHorizontal: 16,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: ACCENT,
-        },
-        pickButtonText: {
-            color: ACCENT,
-            fontSize: 14,
-            fontWeight: '500',
-        },
-        field: {
-            gap: 6,
-        },
-        optional: {
-            fontSize: 12,
-            fontWeight: '400',
-            color: C.textMuted,
-            textTransform: 'none',
-        },
-        label: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: C.textMuted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-        },
-        input: {
-            height: 48,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            paddingHorizontal: 14,
-            fontSize: 16,
-            color: C.text,
-            backgroundColor: C.backgroundInput,
-        },
-        inputError: {
-            borderColor: ERROR,
-        },
-        error: {
-            fontSize: 13,
-            color: ERROR,
-        },
-        createButton: {
-            backgroundColor: ACCENT,
-            borderRadius: 10,
-            paddingVertical: 14,
-            alignItems: 'center',
-        },
-        createButtonText: {
-            color: '#fff',
-            fontSize: 16,
-            fontWeight: '700',
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

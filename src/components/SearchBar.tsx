@@ -8,7 +8,7 @@ import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 
 import { Colors } from "@/styles/global";
 
-import { Keyboard, StyleSheet, View } from "react-native";
+import { Keyboard, View } from "react-native";
 
 import ClearableTextInput from "@/components/ClearableTextInput";
 import SearchButton from "@/components/SearchButton";
@@ -38,11 +38,8 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({ onSearch, loading }: SearchBarProps) {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
-    const placeholderColor = scheme === 'dark'
-        ? Colors.dark.textPlaceholder
-        : Colors.light.textPlaceholder;
+    // placeholderTextColor needs a color value (not a class), so keep it themed here.
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const [query, setQuery] = useState<string>("");
 
@@ -63,11 +60,12 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
     }
 
     return (
-        <View style={styles.container}>
+        <View className="py-3">
             <ClearableTextInput
                 placeholder={typedPlaceholder || "Search a book, author..."}
-                containerStyle={styles.inputContainer}
-                style={styles.input}
+                containerClassName="mb-2"
+                className="h-11 rounded-lg border border-border-input bg-input px-3 text-base text-fg"
+                style={{ textAlignVertical: 'center', includeFontPadding: false }}
                 placeholderTextColor={placeholderColor}
                 value={query}
                 onChangeText={setQuery}
@@ -76,37 +74,7 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
                 autoCorrect={false}
                 autoCapitalize="none"
             />
-            <SearchButton onPress={handleSearch} loading={loading} style={styles.button} />
+            <SearchButton onPress={handleSearch} loading={loading} style={{ marginBottom: 16 }} />
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            paddingVertical: 12,
-        },
-        inputContainer: {
-            marginBottom: 8,
-        },
-        input: {
-            height: 44,
-            borderColor: C.borderInput,
-            color: C.text,
-            borderWidth: 1,
-            borderRadius: 8,
-            paddingHorizontal: 12,
-            paddingVertical: 0,
-            fontSize: 16,
-            backgroundColor: C.backgroundInput,
-            textAlignVertical: 'center',
-            includeFontPadding: false,
-        },
-        button: {
-            marginBottom: 16,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

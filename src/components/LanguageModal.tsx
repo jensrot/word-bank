@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,7 +8,7 @@ import { useColorScheme } from "@/context/theme-context";
 import type { Language } from "@/models/language";
 import { LANGUAGES } from "@/models/language";
 
-import { ACCENT, Colors, Fonts } from "@/styles/global";
+import { Colors, Fonts } from "@/styles/global";
 
 type LanguageModalProps = {
     selected: Language;
@@ -16,13 +16,8 @@ type LanguageModalProps = {
 };
 
 export default function LanguageModal({ selected, onSelect }: LanguageModalProps) {
-    const scheme = useColorScheme();
     const insets = useSafeAreaInsets();
-
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
-    const placeholderColor = scheme === 'dark'
-        ? Colors.dark.textPlaceholder
-        : Colors.light.textPlaceholder;
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const [visible, setVisible] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
@@ -65,11 +60,11 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
 
     return (
         <React.Fragment>
-            <Pressable style={styles.langButton} onPress={() => setVisible(true)}>
-                <Text style={styles.langButtonLabel}>Dictionary language</Text>
-                <View style={styles.langButtonRight}>
-                    <Text style={styles.langButtonValue}>{selected.label}</Text>
-                    <Text style={styles.langChevron}>›</Text>
+            <Pressable className="flex-row items-center justify-between border-b border-border px-3 py-2" onPress={() => setVisible(true)}>
+                <Text className="text-[13px] text-muted">Dictionary language</Text>
+                <View className="flex-row items-center gap-1">
+                    <Text className="text-[13px] font-semibold text-accent">{selected.label}</Text>
+                    <Text className="text-lg text-accent">›</Text>
                 </View>
             </Pressable>
 
@@ -80,9 +75,9 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
                 onRequestClose={() => setVisible(false)}
             >
                 <KeyboardProvider>
-                    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-                        <Pressable style={styles.modalOverlay} onPress={() => setVisible(false)}>
-                            <Pressable style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]}>
+                    <KeyboardAvoidingView behavior="padding" className="flex-1">
+                        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setVisible(false)}>
+                            <Pressable className="max-h-[70%] rounded-t-2xl bg-background" style={{ paddingBottom: insets.bottom + 16 }}>
                                 <FlatList
                                     ref={listRef}
                                     data={filteredLanguages}
@@ -93,30 +88,31 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
                                         const active = item.code === selected.code;
                                         return (
                                             <Pressable
-                                                style={[styles.langOption, active && styles.langOptionActive]}
+                                                className={`flex-row items-center gap-2 border-b border-border px-4 py-3 ${active ? "bg-card" : ""}`}
                                                 onPress={() => handleSelect(item)}
                                             >
-                                                <Text style={[styles.langOptionText, active && styles.langOptionTextActive]}>
+                                                <Text className={`flex-1 text-[15px] ${active ? "font-semibold text-accent" : "text-fg"}`}>
                                                     {item.label}
                                                 </Text>
-                                                <Text style={styles.langOptionCode}>{item.code}</Text>
-                                                {active && <Text style={styles.langCheck}>✓</Text>}
+                                                <Text className="text-xs text-muted" style={{ fontFamily: Fonts.mono }}>{item.code}</Text>
+                                                {active && <Text className="text-sm font-bold text-accent">✓</Text>}
                                             </Pressable>
                                         );
                                     }}
                                     ListEmptyComponent={
-                                        <Text style={styles.langEmpty}>No languages match &quot;{search}&quot;</Text>
+                                        <Text className="p-6 text-center text-sm text-muted">No languages match &quot;{search}&quot;</Text>
                                     }
                                 />
-                                <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>Dictionary language</Text>
+                                <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
+                                    <Text className="text-base font-bold text-fg">Dictionary language</Text>
                                     <Pressable onPress={() => setVisible(false)} hitSlop={12}>
-                                        <Text style={styles.modalClose}>✕</Text>
+                                        <Text className="text-base text-muted">✕</Text>
                                     </Pressable>
                                 </View>
 
                                 <TextInput
-                                    style={styles.modalSearch}
+                                    className="mx-4 h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
+                                    style={{ textAlignVertical: 'center', includeFontPadding: false }}
                                     placeholder="Search languages..."
                                     placeholderTextColor={placeholderColor}
                                     value={search}
@@ -133,117 +129,3 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
         </React.Fragment>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        langButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-        },
-        langButtonLabel: {
-            fontSize: 13,
-            color: C.textMuted,
-        },
-        langButtonRight: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-        },
-        langButtonValue: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: ACCENT,
-        },
-        langChevron: {
-            fontSize: 18,
-            color: ACCENT,
-        },
-        modalOverlay: {
-            flex: 1,
-            justifyContent: 'flex-end',
-            backgroundColor: 'rgba(0,0,0,0.4)',
-        },
-        modalSheet: {
-            backgroundColor: C.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            maxHeight: '70%',
-        },
-        modalHeader: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            paddingBottom: 8,
-        },
-        modalTitle: {
-            fontSize: 16,
-            fontWeight: '700',
-            color: C.text,
-        },
-        modalClose: {
-            fontSize: 16,
-            color: C.textMuted,
-        },
-        modalSearch: {
-            marginHorizontal: 16,
-            height: 40,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            backgroundColor: C.backgroundInput,
-            paddingHorizontal: 12,
-            paddingVertical: 0,
-            fontSize: 15,
-            color: C.text,
-            textAlignVertical: 'center',
-            includeFontPadding: false,
-        },
-        langOption: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: C.border,
-            gap: 8,
-        },
-        langOptionActive: {
-            backgroundColor: C.backgroundCard,
-        },
-        langOptionText: {
-            flex: 1,
-            fontSize: 15,
-            color: C.text,
-        },
-        langOptionTextActive: {
-            color: ACCENT,
-            fontWeight: '600',
-        },
-        langOptionCode: {
-            fontSize: 12,
-            color: C.textMuted,
-            fontFamily: Fonts.mono,
-        },
-        langCheck: {
-            fontSize: 14,
-            color: ACCENT,
-            fontWeight: '700',
-        },
-        langEmpty: {
-            textAlign: 'center',
-            padding: 24,
-            fontSize: 14,
-            color: C.textMuted,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

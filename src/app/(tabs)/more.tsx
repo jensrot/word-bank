@@ -1,11 +1,9 @@
-import { useThemedStyles } from "@/hooks/use-themed-styles";
 import { useScrollViewScroll } from "@/hooks/use-scroll-registration";
 import { clearAllBookData } from "@/storage/read-list-storage";
-import { Colors, ERROR } from "@/styles/global";
-import { showActionSheet } from "@/utils/show-action-sheet";
 import { alertDialog } from "@/utils/alert-dialog";
+import { showActionSheet } from "@/utils/show-action-sheet";
 import { Link, router, type Href } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { version, license } from "../../../package.json";
 
@@ -55,14 +53,12 @@ type RowProps = {
 // right-aligned value for read-only info (version, license). `danger` styles a
 // destructive action's label in red.
 function Row({ label, value, href, onPress, chevron, first, danger }: RowProps) {
-    const styles = useThemedStyles(lightStyles, darkStyles);
-
     const inner = (
-        <View style={[styles.row, !first && styles.rowBorder]}>
-            <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
-            <View style={styles.rowRight}>
-                {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-                {chevron ? <Text style={styles.chevron}>›</Text> : null}
+        <View className={`flex-row items-center justify-between p-3.5 ${!first ? "border-t border-border" : ""}`}>
+            <Text className={`text-[15px] ${danger ? "text-error" : "text-fg"}`}>{label}</Text>
+            <View className="flex-row items-center gap-1.5">
+                {value ? <Text className="text-[15px] text-muted">{value}</Text> : null}
+                {chevron ? <Text className="text-lg text-faded">›</Text> : null}
             </View>
         </View>
     );
@@ -81,11 +77,10 @@ function Row({ label, value, href, onPress, chevron, first, danger }: RowProps) 
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    const styles = useThemedStyles(lightStyles, darkStyles);
     return (
-        <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{title}</Text>
-            <View style={styles.card}>{children}</View>
+        <View className="gap-2">
+            <Text className="ml-1 text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">{title}</Text>
+            <View className="overflow-hidden rounded-[10px] bg-card">{children}</View>
         </View>
     );
 }
@@ -93,15 +88,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // A tappable source row: shows the area, the provider in use, and a plain-language
 // description. Tapping opens the provider chooser.
 function SourceRow({ source, first, onPress }: { source: BookSource; first?: boolean; onPress: () => void }) {
-    const styles = useThemedStyles(lightStyles, darkStyles);
     return (
-        <Pressable style={[styles.sourceRow, !first && styles.rowBorder]} onPress={onPress}>
-            <View style={styles.sourceMain}>
-                <Text style={styles.sourceCategory}>{source.category}</Text>
-                <Text style={styles.sourceProvider}>{source.active}</Text>
-                <Text style={styles.sourceDescription}>{source.description}</Text>
+        <Pressable className={`flex-row items-center gap-2 px-3.5 py-3 ${!first ? "border-t border-border" : ""}`} onPress={onPress}>
+            <View className="flex-1 gap-0.5">
+                <Text className="text-xs font-semibold uppercase tracking-[0.5px] text-muted">{source.category}</Text>
+                <Text className="text-[15px] font-medium text-fg">{source.active}</Text>
+                <Text className="text-[13px] leading-[18px] text-muted">{source.description}</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Text className="text-lg text-faded">›</Text>
         </Pressable>
     );
 }
@@ -142,23 +136,16 @@ function handleDeleteAll(): void {
 }
 
 export default function MoreScreen() {
-    const styles = useThemedStyles(lightStyles, darkStyles);
-
     const { ref: scrollRef, onScroll, scrollEventThrottle } = useScrollViewScroll();
 
     return (
         <ScrollView
             ref={scrollRef}
-            style={styles.container}
-            contentContainerStyle={styles.content}
+            className="flex-1 bg-background"
+            contentContainerClassName="p-4 pb-8 gap-6"
             scrollEventThrottle={scrollEventThrottle}
             onScroll={onScroll}
         >
-            {/* NativeWind smoke test — remove once confirmed working. */}
-            <Text className="rounded-lg bg-blue-500 py-3 text-center text-base font-bold text-white">
-                NativeWind is working ✓
-            </Text>
-
             <Section title="Your data">
                 <Row label="Export Books" chevron first />
                 <Row label="Import Books" chevron />
@@ -191,95 +178,3 @@ export default function MoreScreen() {
         </ScrollView>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        content: {
-            padding: 16,
-            paddingBottom: 32,
-            gap: 24,
-        },
-        section: {
-            gap: 8,
-        },
-        sectionLabel: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: C.textMuted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginLeft: 4,
-        },
-        card: {
-            backgroundColor: C.backgroundCard,
-            borderRadius: 10,
-            overflow: 'hidden',
-        },
-        row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 14,
-            paddingVertical: 14,
-        },
-        rowBorder: {
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: C.border,
-        },
-        rowLabel: {
-            fontSize: 15,
-            color: C.text,
-        },
-        rowLabelDanger: {
-            color: ERROR,
-        },
-        sourceRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            gap: 8,
-        },
-        sourceMain: {
-            flex: 1,
-            gap: 2,
-        },
-        sourceCategory: {
-            fontSize: 12,
-            fontWeight: '600',
-            color: C.textMuted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-        },
-        sourceProvider: {
-            fontSize: 15,
-            fontWeight: '500',
-            color: C.text,
-        },
-        sourceDescription: {
-            fontSize: 13,
-            color: C.textMuted,
-            lineHeight: 18,
-        },
-        rowRight: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-        },
-        rowValue: {
-            fontSize: 15,
-            color: C.textMuted,
-        },
-        chevron: {
-            fontSize: 18,
-            color: C.textFaded,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

@@ -1,14 +1,10 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
-import { useThemedStyles } from "@/hooks/use-themed-styles";
-import { Colors } from "@/styles/global";
 import { useBookSearch } from "@/hooks/use-book-search";
 import BooksList from "@/components/BooksList";
 import SearchBar from "@/components/SearchBar";
 
 export default function HomeScreen() {
-    const styles = useThemedStyles(lightStyles, darkStyles);
-
     const {
         books,
         loading,
@@ -27,7 +23,7 @@ export default function HomeScreen() {
     );
 
     return (
-        <View style={styles.container}>
+        <View className="flex-1 bg-background">
             <BooksList
                 books={books}
                 loading={loading}
@@ -38,9 +34,9 @@ export default function HomeScreen() {
                 onRetryLoadMore={retryLoadMore}
                 header={header}
                 listEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptySubtitle}>
-                            Search for a book and add a word to your <Text style={styles.wordBankText}>word bank</Text> per book!
+                    <View className="mt-16 items-center gap-2.5 px-8">
+                        <Text className="text-center text-sm leading-5 text-muted">
+                            Search for a book and add a word to your <Text className="italic text-muted">word bank</Text> per book!
                             Want to add a custom book? Press the + button.
                         </Text>
                     </View>
@@ -49,31 +45,3 @@ export default function HomeScreen() {
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        emptyContainer: {
-            marginTop: 64,
-            alignItems: 'center',
-            paddingHorizontal: 32,
-            gap: 10,
-        },
-        emptySubtitle: {
-            fontSize: 14,
-            color: C.textMuted,
-            textAlign: 'center',
-            lineHeight: 21,
-        },
-        wordBankText: {
-            fontStyle: "italic",
-            color: C.textMuted,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);

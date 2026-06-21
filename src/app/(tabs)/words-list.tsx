@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Keyboard, Pressable, Text, View } from "react-native";
 
 import { Link, useFocusEffect, useIsFocused } from "expo-router";
 
@@ -54,9 +54,8 @@ function matchesPos(partOfSpeech: string, filter: PosFilter): boolean {
 }
 
 export default function WordsListScreen() {
-    const scheme = useColorScheme();
-    const styles = scheme === 'dark' ? darkStyles : lightStyles;
-    const placeholderColor = Colors[scheme].textPlaceholder;
+    // placeholderTextColor needs a color value (not a class), so keep it themed here.
+    const placeholderColor = Colors[useColorScheme()].textPlaceholder;
 
     const [allWords, setAllWords] = useState<WordWithBook[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -159,18 +158,19 @@ export default function WordsListScreen() {
 
     if (loading) {
         return (
-            <View style={styles.container}>
-                <ActivityIndicator style={styles.loader} color={ACCENT} />
+            <View className="flex-1 bg-background">
+                <ActivityIndicator className="mt-12" color={ACCENT} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.searchRow}>
+        <View className="flex-1 bg-background">
+            <View className="px-4 pb-2 pt-3">
                 <ClearableTextInput
-                    containerStyle={styles.searchInput}
-                    style={styles.search}
+                    containerClassName="mb-2"
+                    className="h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
+                    style={{ textAlignVertical: 'center', includeFontPadding: false }}
                     placeholder={typedPlaceholder || "Search your word bank..."}
                     placeholderTextColor={placeholderColor}
                     value={search}
@@ -184,19 +184,19 @@ export default function WordsListScreen() {
             </View>
 
             {/* Part-of-speech filter pills: All / Nouns / Adjectives. */}
-            <View style={styles.filterRow}>
+            <View className="flex-row gap-2 px-4 pb-2">
                 {POS_FILTERS.map(({ value, label }) => {
                     const selected = posFilter === value;
                     return (
                         <Pressable
                             key={value}
                             onPress={() => setPosFilter(value)}
-                            style={[styles.filterPill, selected && styles.filterPillSelected]}
+                            className={`flex-1 items-center justify-center rounded-lg border px-1 py-1.75 ${selected ? "border-accent bg-accent" : "border-border-input bg-input"}`}
                             accessibilityRole="button"
                             accessibilityState={{ selected }}
                         >
                             <Text
-                                style={[styles.filterText, selected && styles.filterTextSelected]}
+                                className={`text-xs font-semibold ${selected ? "text-white" : "text-muted"}`}
                                 numberOfLines={1}
                                 adjustsFontSizeToFit
                                 minimumFontScale={0.7}
@@ -209,9 +209,9 @@ export default function WordsListScreen() {
             </View>
 
             {/* Sort control */}
-            <View style={styles.sortRow}>
-                <Pressable onPress={handleChooseSort} hitSlop={8} style={styles.sortButton}>
-                    <Text style={styles.sortButtonText}>Sort words: {SORT_LABELS[sortMode]} ▾</Text>
+            <View className="items-end px-4 pb-2">
+                <Pressable onPress={handleChooseSort} hitSlop={8} className="py-0.5">
+                    <Text className="text-[13px] font-semibold text-accent">Sort words: {SORT_LABELS[sortMode]} ▾</Text>
                 </Pressable>
             </View>
 
@@ -219,21 +219,21 @@ export default function WordsListScreen() {
                 ref={flatListRef}
                 data={filtered}
                 keyExtractor={(item) => `${item.bookKey}_${item.word}`}
-                contentContainerStyle={styles.list}
+                contentContainerClassName="gap-2.5 px-4 pb-8"
                 scrollEventThrottle={scrollEventThrottle}
                 onScroll={onScroll}
                 keyboardShouldPersistTaps="handled"
                 ListEmptyComponent={
                     allWords.length === 0 ? (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyTitle}>No words yet</Text>
-                            <Link href="/" style={styles.emptyLink}>
+                        <View className="mt-16 items-center gap-2.5 px-8">
+                            <Text className="text-lg font-semibold text-fg">No words yet</Text>
+                            <Link href="/" className="text-center text-sm text-accent">
                                 Open a book and add words to build your word bank.
                             </Link>
                         </View>
                     ) : (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyTitle}>No words are matched</Text>
+                        <View className="mt-16 items-center gap-2.5 px-8">
+                            <Text className="text-lg font-semibold text-fg">No words are matched</Text>
                         </View>
                     )
                 }
@@ -244,103 +244,3 @@ export default function WordsListScreen() {
         </View>
     );
 }
-
-function buildStyles(C: typeof Colors.light) {
-    return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.background,
-        },
-        searchRow: {
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: 8,
-        },
-        searchInput: {
-            marginBottom: 8,
-        },
-        filterRow: {
-            flexDirection: 'row',
-            gap: 8,
-            paddingHorizontal: 16,
-            paddingBottom: 8,
-        },
-        filterPill: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 7,
-            paddingHorizontal: 4,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            backgroundColor: C.backgroundInput,
-        },
-        filterPillSelected: {
-            borderColor: ACCENT,
-            backgroundColor: ACCENT,
-        },
-        filterText: {
-            fontSize: 12,
-            fontWeight: '600',
-            color: C.textMuted,
-        },
-        filterTextSelected: {
-            color: '#fff',
-        },
-        sortRow: {
-            paddingHorizontal: 16,
-            paddingBottom: 8,
-            alignItems: 'flex-end',
-        },
-        sortButton: {
-            paddingVertical: 2,
-        },
-        sortButtonText: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: ACCENT,
-        },
-        search: {
-            height: 40,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: C.borderInput,
-            backgroundColor: C.backgroundInput,
-            paddingHorizontal: 12,
-            paddingVertical: 0,
-            fontSize: 15,
-            color: C.text,
-            textAlignVertical: 'center',
-            includeFontPadding: false,
-        },
-        list: {
-            paddingHorizontal: 16,
-            paddingBottom: 32,
-            gap: 10,
-        },
-        loader: {
-            marginTop: 48,
-        },
-        emptyContainer: {
-            marginTop: 64,
-            alignItems: 'center',
-            paddingHorizontal: 32,
-            gap: 10,
-        },
-        emptyTitle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: C.text,
-        },
-        emptyLink: {
-            fontSize: 14,
-            color: ACCENT,
-            textAlign: 'center',
-            lineHeight: 21,
-        },
-    });
-}
-
-const lightStyles = buildStyles(Colors.light);
-const darkStyles = buildStyles(Colors.dark);
