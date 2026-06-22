@@ -55,7 +55,7 @@ function LoadingDot({ delay }: { delay: number }) {
 export default function SearchButton({ onPress, loading = false, label = "Search", style }: SearchButtonProps) {
     return (
         <Pressable
-            className={`items-center rounded-lg bg-accent py-2.5 ${loading ? "opacity-60" : ""}`}
+            className={`items-center rounded-[10px] bg-accent py-2.5 active:bg-accent-strong ${loading ? "opacity-60" : ""}`}
             style={style}
             onPress={onPress}
             disabled={loading}
