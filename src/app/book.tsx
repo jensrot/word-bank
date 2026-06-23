@@ -126,6 +126,9 @@ export default function BookDetail() {
     const notesRef = useRef<TextInput>(null);
     const sentenceRef = useRef<TextInput>(null);
     const reviewInputRef = useRef<TextInput>(null);
+    // Which field to focus when a word's edit form opens — set by openWordEdit so
+    // tapping the Sentence vs Notes text focuses the matching input.
+    const focusFieldRef = useRef<'sentence' | 'notes'>('sentence');
     // Scroll-to-notes: the scroll view ref + the Book Notes section's y offset
     // (captured on layout), so the "Jump to notes" link can scroll straight there.
     const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
@@ -155,7 +158,9 @@ export default function BookDetail() {
 
     useEffect(() => {
         if (editingWord) {
-            setTimeout(() => sentenceRef.current?.focus(), 50);
+            const ref = focusFieldRef.current === 'notes' ? notesRef : sentenceRef;
+            setTimeout(() => ref.current?.focus(), 50);
+            focusFieldRef.current = 'sentence'; // reset default for the next open
         }
     }, [editingWord]);
 
@@ -371,6 +376,14 @@ export default function BookDetail() {
         );
     }
 
+    // Open a word's inline edit form, seeding the draft from its current values.
+    // `field` decides which input gets focus (tapping the Sentence vs Notes text).
+    function openWordEdit(item: WordEntry, field: 'sentence' | 'notes' = 'sentence'): void {
+        focusFieldRef.current = field;
+        setEditingWord(item.word);
+        setDraft({ sentence: item.sentence ?? '', notes: item.notes ?? '' });
+    }
+
     async function handleSaveEdit(word: string): Promise<void> {
         const updated = words.map((w) =>
             w.word === word
@@ -549,8 +562,7 @@ export default function BookDetail() {
                                                     if (isEditing) {
                                                         setEditingWord(null);
                                                     } else {
-                                                        setEditingWord(item.word);
-                                                        setDraft({ sentence: item.sentence ?? '', notes: item.notes ?? '' });
+                                                        openWordEdit(item);
                                                     }
                                                 }}
                                             >
@@ -575,17 +587,17 @@ export default function BookDetail() {
                                         ) : null}
 
                                         {!isEditing && item.sentence ? (
-                                            <View className="mt-1.5 gap-0.5">
+                                            <Pressable className="mt-1.5 gap-0.5" onPress={() => openWordEdit(item, 'sentence')}>
                                                 <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Sentence</Text>
                                                 <Text className="text-sm leading-5 text-meta">{item.sentence}</Text>
-                                            </View>
+                                            </Pressable>
                                         ) : null}
 
                                         {!isEditing && item.notes ? (
-                                            <View className="mt-1.5 gap-0.5">
+                                            <Pressable className="mt-1.5 gap-0.5" onPress={() => openWordEdit(item, 'notes')}>
                                                 <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">Notes</Text>
                                                 <Text className="text-sm leading-5 text-meta">{item.notes}</Text>
-                                            </View>
+                                            </Pressable>
                                         ) : null}
 
                                         {isEditing ? (
