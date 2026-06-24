@@ -157,6 +157,51 @@ Deploy `dist/` to any static host:
   `output: "static"` pre-renders each route, deep links resolve without extra SPA
   rewrites.)
 
+> **Two env vars are inlined at build time** — pass both so web lookups *and* the
+> trending-words feed work: `EXPO_PUBLIC_DICT_API_URL` (dictionary, read in
+> [words-api.ts](src/utils/words-api.ts)) and `EXPO_PUBLIC_WORDS_FEED_API_URL` (feed,
+> read in [words-feed-api.ts](src/utils/words-feed-api.ts)). Both must be **HTTPS** and
+> **CORS-allow your web origin** (§5).
+
+### 6a. Self-host on the Oracle VM (alongside the two APIs)
+
+The export is just static files, so the **same Caddy** that reverse-proxies the two
+APIs (`wiktapi.dev` :3000, `word-bank-server` :4000) can serve the web app directly —
+everything on one box, one TLS setup.
+
+**Build + copy** (run on your Mac; building needs Node + deps). The
+[scripts/deploy-web-oracle.sh](scripts/deploy-web-oracle.sh) helper does the export
+(with both env vars inlined) and `rsync`s `dist/` to the VM:
+
+```bash
+WEB_API_URL=https://dict.yourdomain.com \
+WORDS_FEED_URL=https://words.yourdomain.com \
+VM_HOST=ubuntu@vm.yourdomain.com \
+  npm run deploy:web:oracle
+# optional: VM_PATH=/var/www/wordbank-app/dist (default), RELOAD_CADDY=1
+```
+
+**Caddyfile** — add an `app` subdomain next to the API proxies:
+
+```caddy
+dict.yourdomain.com  { reverse_proxy localhost:3000 }   # wiktapi.dev
+words.yourdomain.com { reverse_proxy localhost:4000 }   # word-bank-server
+app.yourdomain.com {                                     # the web app (static)
+    root * /var/www/wordbank-app/dist
+    try_files {path} /index.html                         # SPA fallback for deep links
+    file_server
+    encode gzip
+}
+```
+
+Then `sudo systemctl reload caddy` (or `RELOAD_CADDY=1` on the deploy command). Caddy
+auto-provisions HTTPS for `app.yourdomain.com` too. First time, create the web dir:
+`sudo mkdir -p /var/www/wordbank-app/dist && sudo chown -R $USER /var/www/wordbank-app`.
+
+**CORS:** set `ALLOWED_ORIGIN=https://app.yourdomain.com` on word-bank-server (wiktapi
+already sends `*`). **Ports:** only expose 80/443 publicly (OCI security list *and* the
+instance iptables); 3000/4000 stay internal — Caddy reaches them on localhost.
+
 ---
 
 ## 7. Known limitations / optional polish
