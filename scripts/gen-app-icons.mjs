@@ -7,6 +7,7 @@
 //   assets/adaptive-icon-foreground.png     1024² alpha   — Android adaptive foreground
 //   assets/images/android-icon-monochrome.png 1024² alpha — Android 13+ themed icon
 //   assets/splash.png                       alpha         — splash (mark + wordmark)
+//   assets/favicon.png                       512² alpha    — web browser-tab favicon
 //
 // Icons/splash are native assets — changing them needs a rebuild, not an OTA.
 import sharp from 'sharp';
@@ -37,4 +38,9 @@ await render('monochrome.svg').resize(1024, 1024)
 await render('splash.svg').resize({ width: 1024 })
     .png().toFile(`${root}assets/splash.png`);
 
-console.log('Generated icon.png, adaptive-icon-foreground.png, android-icon-monochrome.png, splash.png');
+// Web favicon (browser tab) — rounded tile, transparent corners (no flatten),
+// matching the marketing site's favicon. Referenced by app.config web.favicon.
+await render('favicon.svg').resize(512, 512)
+    .png().toFile(`${root}assets/favicon.png`);
+
+console.log('Generated icon.png, adaptive-icon-foreground.png, android-icon-monochrome.png, splash.png, favicon.png');
