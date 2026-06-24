@@ -109,7 +109,7 @@ export default function CustomBookScreen() {
                     <View className="gap-1.5">
                         <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Title</Text>
                         <ClearableTextInput
-                            className={`h-12 rounded-lg border bg-input px-3.5 text-base text-fg ${titleError ? "border-error" : "border-border-input"}`}
+                            className={`rounded-lg border bg-input px-3.5 py-3 text-base text-fg ${titleError ? "border-error" : "border-border-input"}`}
                             placeholder={typedPlaceholder || "Enter book title"}
                             placeholderTextColor={placeholderColor}
                             value={title}
@@ -122,8 +122,8 @@ export default function CustomBookScreen() {
                     <View className="gap-1.5">
                         <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Author <Text className="text-xs font-normal normal-case text-muted">(optional)</Text></Text>
                         <ClearableTextInput
-                            className="h-12 rounded-lg border border-border-input bg-input px-3.5 text-base text-fg"
-                            placeholder="e.g. Jane Austen"
+                            className="rounded-lg border border-border-input bg-input px-3.5 py-3 text-base text-fg"
+                            placeholder="Jane Austen"
                             placeholderTextColor={placeholderColor}
                             value={author}
                             onChangeText={setAuthor}
@@ -134,8 +134,8 @@ export default function CustomBookScreen() {
                     <View className="gap-1.5">
                         <Text className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted">Year <Text className="text-xs font-normal normal-case text-muted">(optional)</Text></Text>
                         <ClearableTextInput
-                            className="h-12 rounded-lg border border-border-input bg-input px-3.5 text-base text-fg"
-                            placeholder="e.g. 1813"
+                            className="rounded-lg border border-border-input bg-input px-3.5 py-3 text-base text-fg"
+                            placeholder="1813"
                             placeholderTextColor={placeholderColor}
                             value={year}
                             onChangeText={setYear}
