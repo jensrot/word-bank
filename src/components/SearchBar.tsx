@@ -64,8 +64,7 @@ export default function SearchBar({ onSearch, loading }: SearchBarProps) {
             <ClearableTextInput
                 placeholder={typedPlaceholder || "Search a book, author..."}
                 containerClassName="mb-2"
-                className="h-11 rounded-lg border border-border-input bg-input px-3 text-base text-fg"
-                style={{ textAlignVertical: 'center', includeFontPadding: false }}
+                className="rounded-lg border border-border-input bg-input px-3 py-3 text-base text-fg"
                 placeholderTextColor={placeholderColor}
                 value={query}
                 onChangeText={setQuery}
