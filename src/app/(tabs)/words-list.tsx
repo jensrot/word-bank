@@ -169,8 +169,7 @@ export default function WordsListScreen() {
             <View className="px-4 pb-2 pt-3">
                 <ClearableTextInput
                     containerClassName="mb-2"
-                    className="h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
-                    style={{ textAlignVertical: 'center', includeFontPadding: false }}
+                    className="rounded-lg border border-border-input bg-input px-3 py-3 text-[15px] text-fg"
                     placeholder={typedPlaceholder || "Search your word bank..."}
                     placeholderTextColor={placeholderColor}
                     value={search}
@@ -227,7 +226,7 @@ export default function WordsListScreen() {
                     allWords.length === 0 ? (
                         <View className="mt-16 items-center gap-2.5 px-8">
                             <Text className="text-lg font-semibold text-fg">No words yet</Text>
-                            <Link href="/" className="text-center text-sm text-accent">
+                            <Link href="/read-list" className="text-center text-sm text-accent">
                                 Open a book and add words to build your word bank.
                             </Link>
                         </View>
