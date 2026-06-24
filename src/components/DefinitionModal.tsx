@@ -131,8 +131,7 @@ export default function DefinitionModal({ visible, onClose, word, definitions, s
                             </View>
 
                             <TextInput
-                                className="mx-4 h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
-                                style={{ textAlignVertical: 'center', includeFontPadding: false }}
+                                className="mx-4 rounded-lg border border-border-input bg-input px-3 py-3 text-[15px] text-fg"
                                 placeholder="Search definitions..."
                                 placeholderTextColor={placeholderColor}
                                 value={search}

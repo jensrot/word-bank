@@ -111,8 +111,7 @@ export default function LanguageModal({ selected, onSelect }: LanguageModalProps
                                 </View>
 
                                 <TextInput
-                                    className="mx-4 h-10 rounded-lg border border-border-input bg-input px-3 text-[15px] text-fg"
-                                    style={{ textAlignVertical: 'center', includeFontPadding: false }}
+                                    className="mx-4 rounded-lg border border-border-input bg-input px-3 py-3 text-[15px] text-fg"
                                     placeholder="Search languages..."
                                     placeholderTextColor={placeholderColor}
                                     value={search}
