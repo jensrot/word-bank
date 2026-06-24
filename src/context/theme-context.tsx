@@ -5,7 +5,7 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import { Appearance, useColorScheme as useSystemColorScheme } from "react-native";
+import { Appearance, Platform, useColorScheme as useSystemColorScheme } from "react-native";
 
 import { getTheme, setTheme, type ColorScheme } from "@/storage/theme-storage";
 
@@ -31,12 +31,16 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    // Drive NativeWind's color scheme from the app's (persisted) choice, so className
-    // dark styles and the flipped theme tokens follow the manual toggle, not the OS.
-    // `Appearance.setColorScheme` is native-only — it's missing on React Native Web,
-    // so guard the call to avoid a crash there (web follows prefers-color-scheme).
+    // Drive the color scheme from the app's (persisted) choice so the theme tokens
+    // follow the manual toggle, not the OS.
+    // - Native: `Appearance.setColorScheme` (missing on react-native-web, so `?.`).
+    // - Web: that call no-ops, so also reflect the choice onto `<html data-theme>`,
+    //   which global.css honors to override the prefers-color-scheme media query.
     useEffect(() => {
         Appearance.setColorScheme?.(colorScheme);
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+            document.documentElement.dataset.theme = colorScheme;
+        }
     }, [colorScheme]);
 
     function toggleTheme(): void {

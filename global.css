@@ -27,8 +27,30 @@
     --color-remove-icon: #aaaaaa;
 }
 
+/* Manual choice wins: theme-context sets <html data-theme="dark"> on web (it also
+   out-specifies the @theme :root light defaults). On native, NativeWind drives the
+   media query via Appearance.setColorScheme, so this attribute path is web-only. */
+:root[data-theme="dark"] {
+    --color-background: #151718;
+    --color-card: #1e2426;
+    --color-input: #252b2d;
+    --color-fg: #ecedee;
+    --color-secondary: #9ba1a6;
+    --color-muted: #687076;
+    --color-body: #c0c8cc;
+    --color-meta: #9ba1a6;
+    --color-faded: #555555;
+    --color-border: #2d3438;
+    --color-border-input: #3d4245;
+    --color-border-edit: #2d3438;
+    --color-cover-placeholder: #2d3438;
+    --color-remove-icon: #555555;
+}
+
+/* OS fallback — only when no explicit choice has been made, so a chosen light
+   theme beats a dark OS. */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme]) {
         --color-background: #151718;
         --color-card: #1e2426;
         --color-input: #252b2d;
