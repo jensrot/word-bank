@@ -116,6 +116,10 @@ function handleChooseSource(source: BookSource): void {
     ]);
 }
 
+function handleComingSoon(feature: string): void {
+    alertDialog('Coming soon', `${feature} will be available in a later version.`);
+}
+
 function handleDeleteAll(): void {
     showActionSheet(
         "Delete all data",
@@ -147,8 +151,8 @@ export default function MoreScreen() {
             onScroll={onScroll}
         >
             <Section title="Your data">
-                <Row label="Export Books" chevron first />
-                <Row label="Import Books" chevron />
+                <Row label="Export Books" chevron first onPress={() => handleComingSoon('Exporting your books')} />
+                <Row label="Import Books" chevron onPress={() => handleComingSoon('Importing books')} />
                 <Row label="Delete all data" danger onPress={handleDeleteAll} />
             </Section>
 
