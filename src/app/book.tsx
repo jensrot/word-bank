@@ -350,8 +350,13 @@ export default function BookDetail() {
             // Added timestamp for sorting by "Recently added" in the Words List. 
             // This is not part of the dictionary data, so it's added here.
             await persistWords([{ ...newEntry, addedAt: Date.now() }, ...words]);
-            // Fire-and-forget: contribute the word to the public floating-words feed (word only).
-            postWordToFeed(newEntry.word);
+            // Fire-and-forget: contribute the word + its public dictionary definition
+            // to the floating-words feed (no user-authored sentence/notes).
+            postWordToFeed(newEntry.word, {
+                definition: newEntry.definition,
+                partOfSpeech: newEntry.partOfSpeech,
+                phonetic: newEntry.phonetic,
+            });
             setWordAdded(true);
             setInput("");
 

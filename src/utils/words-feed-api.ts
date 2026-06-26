@@ -2,8 +2,9 @@ import { Platform } from 'react-native';
 
 /**
  * Base URL of the external "floating words" feed server that collects words
- * users add, to power a public live feed. Only the bare word is ever sent
- * (no book, language, sentence, notes, or any other context) — see postWordToFeed.
+ * users add, to power a public live feed. Only the word and its *public
+ * dictionary* values (definition / part of speech / IPA) are ever sent — no
+ * book, language, sentence, notes, or any other user content — see postWordToFeed.
  *
  * Opt-in via EXPO_PUBLIC_WORDS_FEED_API_URL (set per environment: `.env.local`
  * for a physical device, `eas.json` `env` for preview/production builds). When
@@ -27,18 +28,27 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_WORDS_FEED_API_URL ?? DEFAULT_LOCAL
 // Abort the request after ~5s so a slow/unreachable server can't leak a request.
 const REQUEST_TIMEOUT_MS = 5000;
 
+/** Public dictionary metadata sent alongside the word (none of it user-authored). */
+export type FeedWordMeta = {
+    definition?: string;
+    partOfSpeech?: string;
+    phonetic?: string;
+};
+
 /**
- * Fire-and-forget POST that contributes a single word to the external words feed.
+ * Fire-and-forget POST that contributes a single word to the external words feed,
+ * with its public dictionary definition / part of speech / IPA so the marketing
+ * site can show the word's meaning.
  *
- * Privacy: ONLY the bare word is sent (trimmed + lowercased) — no book, language,
- * sentence, notes, or user identity.
+ * Privacy: only the word (trimmed + lowercased) and those public dictionary values
+ * are sent — no book, language, sentence, notes, or user identity.
  *
  * This is fire-and-forget: it kicks off the request and returns `void`
  * synchronously without awaiting. It can NEVER throw and any failure (network
  * error, timeout, bad response) is intentionally swallowed so contributing to
  * the feed can never affect the caller's flow (e.g. adding a word).
  */
-export function postWordToFeed(word: string): void {
+export function postWordToFeed(word: string, meta: FeedWordMeta = {}): void {
     try {
         if (!word?.trim()) {
             return;
@@ -50,7 +60,12 @@ export function postWordToFeed(word: string): void {
         fetch(`${API_BASE_URL}/words`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ word: word.trim().toLowerCase() }),
+            body: JSON.stringify({
+                word: word.trim().toLowerCase(),
+                definition: meta.definition?.trim() || undefined,
+                partOfSpeech: meta.partOfSpeech?.trim() || undefined,
+                phonetic: meta.phonetic?.trim() || undefined,
+            }),
             signal: controller.signal,
         })
             .catch(() => { })
